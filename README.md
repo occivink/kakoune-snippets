@@ -11,10 +11,10 @@ Add `snippets.kak` to your autoload dir: `~/.config/kak/autoload/`, or source it
 ## Usage
 
 The extension is configured via two options:
-* `snippets``[str-list]` is an alternating list of snippet names and commands (e.g. `snip-1``snip-1-command``snip-2``snip-2-command`...). When the snippet is referenced by name, the associated command is run.
-* `snippets_auto_expand``[str-list]` is an alternating list of triggers and snippet names (e.g. `trig-1``snip-1``trig-2``snip-2`...). The snippet names must match the ones in the other option. When one of the triggers is typed in insert mode, the associated snippet is run.
+* `snippets` `[str-list]` is an alternating list of snippet names and commands (e.g. `snip-1` `snip-1-command` `snip-2` `snip-2-command`...). When the snippet is referenced by name, the associated command is run.
+* `snippets_auto_expand` `[str-list]` is an alternating list of triggers and snippet names (e.g. `trig-1` `snip-1` `trig-2` `snip-2`...). The snippet names must match the ones in the other option. When one of the triggers is typed in insert mode, the associated snippet is run.
 
-Snippets can be run by name with the commands `snippet` and `snippets-menu`. If you only want to use snippets manually, you do not have to set `snippets_auto_expand`.
+Snippets can be run manually with the commands `snippet` and `snippets-menu`. If you only want to use snippets manually, you do not have to set `snippets_auto_expand`.
 
 At any moment, the `snippets-info` command can be used to show the available snippets and their triggers.
 
@@ -59,9 +59,9 @@ I use this [extension](https://github.com/occivink/kakoune-phantom-selection/)
 
 ## Similar extensions
 
-https://github.com/alexherbo2/snippets.kak/blob/master/rc/snippets.kak
-https://github.com/JJK96/kakoune-snippets
-https://github.com/shachaf/kak/blob/master/scripts/snippet.kak
+https://github.com/alexherbo2/snippets.kak  
+https://github.com/JJK96/kakoune-snippets  
+https://github.com/shachaf/kak/blob/master/scripts/snippet.kak  
 
 ## License
 

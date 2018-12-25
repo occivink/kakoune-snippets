@@ -16,7 +16,7 @@ hook global WinSetOption 'snippets_auto_expand=.+$' %{
                 shift 2
             done
         )
-        printf "exec -draft 'b<a-k>%s(%s)%s<ret>';" '\A\b' "${concat%|}" '\b\z'
+        printf "exec -draft 'b<a-k>%s(%s)%s<ret>'\n" '\A\b' "${concat%|}" '\b\z'
 
         eval set -- "$kak_opt_snippets_auto_expand"
         first=0
@@ -27,8 +27,8 @@ hook global WinSetOption 'snippets_auto_expand=.+$' %{
             else
                 printf '} catch %%{'
             fi
-            printf "exec -draft 'b<a-k>%s<ret>d';" "$1"
-            printf "snippets %%{%s};" "$2"
+            printf "exec -draft 'b<a-k>%s<ret>d'\n" "$1"
+            printf "snippets %%{%s}\n" "$2"
             shift 2
         done
         printf '}}'
@@ -78,7 +78,7 @@ def snippets-info %{
 decl -hidden range-specs snippets_placeholders
 decl -hidden int-list snippets_placeholder_groups
 
-face global SnippetsNextPlaceholders black,red+F
+face global SnippetsNextPlaceholders black,green+F
 face global SnippetsOtherPlaceholders black,yellow+F
 
 def snippets-insert -hidden -params 1 %<
@@ -129,19 +129,18 @@ def snippets-insert -hidden -params 1 %<
 >
 
 def -hidden snippets-insert-perl-impl %!
-    eval %sh& # $kak_selections $kak_selections_desc
+    eval %sh& # $kak_selections
         perl -e '
 use strict;
 use warnings;
 use Text::ParseWords();
 
 my @sel_content = Text::ParseWords::shellwords($ENV{"kak_selections"});
-my @sel_descs = Text::ParseWords::shellwords($ENV{"kak_selections_desc"});
 
-my %placeholder_id_to_sel_ids;
 my %placeholder_id_to_default;
 my @placeholder_ids;
 
+print("set window snippets_placeholder_groups");
 for my $i (0 .. $#sel_content) {
     my $sel = $sel_content[$i];
     $sel =~ s/\A\$\{?|\}\Z//g;
@@ -150,11 +149,13 @@ for my $i (0 .. $#sel_content) {
         $placeholder_id = "9999";
     }
     $placeholder_ids[$i] = $placeholder_id;
-    push (@{$placeholder_id_to_sel_ids{$placeholder_id}}, $i+1);
+    print(" $placeholder_id");
     if (defined($placeholder_default)) {
         $placeholder_id_to_default{$placeholder_id} = $placeholder_default;
     }
 }
+print("\n");
+
 print("reg dquote");
 foreach my $i (0 .. $#sel_content) {
     my $placeholder_id = $placeholder_ids[$i];
@@ -172,38 +173,44 @@ foreach my $i (0 .. $#sel_content) {
         print(" '\'''\''");
     }
 }
-
 print("\n");
-print("exec R\n");
-
-print("set window snippets_placeholders %val{timestamp}\n");
-print("set window snippets_placeholder_groups\n");
-
-# iterate over the placeholder ids, sorted numerically
-my $face = "SnippetsNextPlaceholders";
-foreach my $placeholder_id (sort {$a <=> $b} keys %placeholder_id_to_sel_ids) {
-    my $i = 0;
-    foreach my $sel_id (@{$placeholder_id_to_sel_ids{$placeholder_id}}) {
-        print("eval -draft %{ exec $sel_id<space>; set -add window snippets_placeholders \"%val{selection_desc}|$face\" }\n");
-        $i++;
-    }
-    $face = "SnippetsOtherPlaceholders";
-    print("set -add window snippets_placeholder_groups $i\n");
-}
 '
     &
+    exec R
+    set window snippets_placeholders %val{timestamp}
+    # no need to set the NextPlaceholders face yet, select-next-placeholders will take care of that
+    eval -itersel %{ set -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
 !
 
 def snippets-select-next-placeholders %{
+    update-option window snippets_placeholders
     eval %sh{
         eval set -- "$kak_opt_snippets_placeholder_groups"
         if [ $# -eq 0 ]; then printf "fail 'There are no next placeholders'"; exit; fi
-        number_to_select=$1
-        shift
-        number_next=$1
+        next_id=9999
+        second_next_id=9999
+        for placeholder_id do
+            if [ "$placeholder_id" -lt "$next_id" ]; then
+                second_next_id="$next_id"
+                next_id="$placeholder_id"
+            elif [ "$placeholder_id" -lt "$second_next_id" ] && [ "$placeholder_id" -ne "$next_id" ]; then
+                second_next_id="$placeholder_id"
+            fi
+        done
+        next_descs_id=''
+        second_next_descs_id='' # for highlighting purposes
+        desc_id=0
         printf 'set window snippets_placeholder_groups'
-        for i do
-            printf ' %s' "$i"
+        for placeholder_id do
+            if [ "$placeholder_id" -eq "$next_id" ]; then
+                next_descs_id="${next_descs_id} $desc_id"
+            else
+                printf ' %s' "$placeholder_id"
+            fi
+            if [ "$placeholder_id" -eq "$second_next_id" ]; then
+                second_next_descs_id="${second_next_descs_id} $desc_id"
+            fi
+            desc_id=$((desc_id+1))
         done
         printf '\n'
 
@@ -212,16 +219,29 @@ def snippets-select-next-placeholders %{
         printf ' %s' "$1"
         shift
         selections=''
-        for i do
-            if [ "$number_to_select" -gt 0 ]; then
-                selections="${selections} ${i%%|*}"
-                number_to_select=$((number_to_select-1))
-            elif [ "$number_next" -gt 0 ]; then
-                printf ' %s' "${i%%|*}|SnippetsNextPlaceholders"
-                number_next=$((number_next-1))
-            else
-                printf ' %s' "$i"
+        desc_id=0
+        for desc do
+            found=0
+            for candidate_desc_id in $next_descs_id; do
+                if [ "$candidate_desc_id" -eq "$desc_id" ]; then
+                    found=1
+                    selections="${selections} ${desc%%|*}"
+                    break
+                fi
+            done
+            if [ $found -eq 0 ]; then
+                for candidate_desc_id in $second_next_descs_id; do
+                    if [ "$candidate_desc_id" -eq "$desc_id" ]; then
+                        found=1
+                        printf ' %s' "${desc%%|*}|SnippetsNextPlaceholders" 
+                        break
+                    fi
+                done
+                if [ $found -eq 0 ]; then
+                    printf ' %s' "$desc"
+                fi
             fi
+            desc_id=$((desc_id+1))
         done
         printf '\n'
 

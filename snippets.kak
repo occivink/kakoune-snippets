@@ -1,24 +1,41 @@
 decl str-list snippets
-decl str-list snippets_auto_expand
+decl str-list snippets_triggers
+decl bool snippets_auto_expand true
 
-hook global WinSetOption 'snippets_auto_expand=$' %{
-    rmhooks buffer snippets-auto-expand
+hook global WinSetOption 'snippets_auto_expand=false$' %{
+    rmhooks window snippets-auto-expand
 }
-hook global WinSetOption 'snippets_auto_expand=.+$' %{
-    # kakoune/#2397 causes this to be run twice
-    rmhooks buffer snippets-auto-expand
-    hook -group snippets-auto-expand buffer InsertChar .* %sh{
-        printf 'try %%{'
-        concat=$(
-            eval set -- "$kak_opt_snippets_auto_expand"
-            while [ $# -ne 0 ]; do
-                printf '%s|' "$1"
-                shift 2
-            done
-        )
-        printf "exec -draft 'b<a-k>%s(%s)%s<ret>'\n" '\A\b' "${concat%|}" '\b\z'
+hook global WinSetOption 'snippets_auto_expand=true$' %{
+    rmhooks window snippets-auto-expand
+    hook -group snippets-auto-expand window InsertChar .* %{
+        try %{
+            snippets-expand-trigger 'b'
+        }
+    }
+}
 
-        eval set -- "$kak_opt_snippets_auto_expand"
+decl -hidden regex snippets_expand_filter "\A\z" # doing <a-k>\A\z<ret> will always fail
+
+hook global WinSetOption 'snippets_triggers=$' %{
+    set window snippets_expand_filter "\A\z"
+}
+hook global WinSetOption 'snippets_triggers=.+$' %{
+    set window snippets_expand_filter %sh{
+        printf '\A\b('
+        eval set -- "$kak_opt_snippets_triggers"
+        while [ $# -ne 0 ]; do
+            printf '%s|' "$1"
+            shift 2
+        done
+        printf ')\b\z'
+    }
+}
+
+def -hidden snippets-expand-trigger-internal -params ..1 %{
+    # early-out if we're not selecting a valid trigger
+    exec -draft "%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
+    eval %sh{
+        eval set -- "$kak_opt_snippets_triggers"
         first=0
         while [ $# -ne 0 ]; do
             if [ $first -eq 0 ]; then
@@ -27,17 +44,25 @@ hook global WinSetOption 'snippets_auto_expand=.+$' %{
             else
                 printf '} catch %%{'
             fi
-            printf "exec -draft 'b<a-k>%s<ret>d'\n" "$1"
+            printf "exec -draft \"%%arg{1}<a-k>%s<ret>d\"\n" "$1"
             printf "snippets %%{%s}\n" "$2"
             shift 2
         done
-        printf '}}'
+        printf '}'
+    }
+}
+
+def snippets-expand-trigger -params ..1 %{
+    try %{
+        snippets-expand-trigger-internal %arg{@}
+    } catch %{
+        fail 'Not a valid trigger'
     }
 }
 
 def snippets-info %{
     info -title Snippets %sh{
-        eval set -- "$kak_opt_snippets_auto_expand"
+        eval set -- "$kak_opt_snippets_triggers"
         maxlen=0
         while [ $# -ne 0 ]; do
             if [ ${#1} -gt $maxlen ]; then
@@ -54,7 +79,7 @@ def snippets-info %{
                 shift 2
             else
                 snipname="$1"
-                eval set -- "$kak_opt_snippets_auto_expand"
+                eval set -- "$kak_opt_snippets_triggers"
                 found=0
                 while [ $# -ne 0 ]; do
                     if [ "$2" = "$snipname" ]; then
@@ -233,7 +258,7 @@ def snippets-select-next-placeholders %{
                 for candidate_desc_id in $second_next_descs_id; do
                     if [ "$candidate_desc_id" -eq "$desc_id" ]; then
                         found=1
-                        printf ' %s' "${desc%%|*}|SnippetsNextPlaceholders" 
+                        printf ' %s' "${desc%%|*}|SnippetsNextPlaceholders"
                         break
                     fi
                 done

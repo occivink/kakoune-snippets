@@ -12,11 +12,12 @@ Thie plugin has a dependency on `perl`.
 
 ## Usage
 
-The extension is configured via two options:
-* `snippets` `[str-list]` is an alternating list of snippet names and commands (e.g. `snip-1` `snip-1-command` `snip-2` `snip-2-command`...). When the snippet is referenced by name, the associated command is run.
-* `snippets_auto_expand` `[str-list]` is an alternating list of triggers and snippet names (e.g. `trig-1` `snip-1` `trig-2` `snip-2`...). The snippet names must match the ones in the other option. When one of the triggers is typed in insert mode, the associated snippet is run.
+The extension is configured via three options:
+* `snippets` `[str-list]` is an alternating list of snippet names and commands (e.g. `snip-1` `snip-1-command` `snip-2` `snip-2-command`...). When the snippet is referenced by name, the associated command is run.  
+* `snippets_triggers` `[str-list]` is an alternating list of triggers and snippet names (e.g. `trig-1` `snip-1` `trig-2` `snip-2`...). The snippet names must match the ones in the other option.  
+* `snippets_auto_expand` `[bool]` controls whether triggers are automatically expanded when they are typed in insert mode. `true` by default.  
 
-Snippets can be run manually with the commands `snippet` and `snippets-menu`. If you only want to use snippets manually, you do not have to set `snippets_auto_expand`.
+Snippets can be selected manually with the commands `snippet` and `snippets-menu`. The triggers can also be expanded manually `snippets-expand-trigger`.
 
 At any moment, the `snippets-info` command can be used to show the available snippets and their respective triggers.
 
@@ -39,11 +40,17 @@ To use a literal `$` inside a snippet, or a literal `}` inside a placeholder's d
 
 When a snippet is inserted with `snippet-insert`, the first placeholder(s) is automatically selected. It is then possible to iterate over the remaining placeholders using `snippets-select-next-placeholders`. The 0th placeholder will always be selected last.
 
+## Changelog
+
+* triggers can now be manually expanded by calling the `snippets-expand-trigger` command on a valid trigger
+* `snippets_auto_expand` is now a boolean that controls whether auto-expansion of triggers is enabled
+* `snippets_auto_expand` was renamed to `snippets_triggers`
+
 ## FAQ
 
 ### What's the performance impact of the extension?
 
-If you use the auto-expansion feature (i.e. the option is not empty), there is a minimal setup of 1 shell-scope when the option is set. The runtime hook uses no shell scope, and exits quickly if there is no match.  
+If you use the auto-expansion feature, a runtime hook is run on each Insert mode key press. It only uses a shell scope in case of a match, and stop early otherwise.
 If you don't use it, there is no runtime cost (except when executing a snippet of course).
 
 ### What's with escaping, what kind of characters can I use and not use?

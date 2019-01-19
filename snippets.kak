@@ -9,7 +9,7 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     rmhooks window snippets-auto-expand
     hook -group snippets-auto-expand window InsertChar .* %{
         try %{
-            snippets-expand-trigger 'b'
+            snippets-expand-trigger-internal b
         }
     }
 }

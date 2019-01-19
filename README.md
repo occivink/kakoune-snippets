@@ -1,5 +1,7 @@
 # kakoune-snippets
 
+**Warning**: this plugin is still in its early stages so expect breakages. I'll try to keep the changelog (see below) up-to-date.
+
 (Yet another) [kakoune](http://kakoune.org) plugin for handling snippets.
 
 [![demo](https://asciinema.org/a/217470.png)](https://asciinema.org/a/217470)

@@ -19,7 +19,7 @@ hook global WinSetOption 'snippets=.+$' %{
 
 def snippets-expand-trigger-internal -hidden -params ..1 %{
     # early-out if we're not selecting a valid trigger
-    exec -draft "%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
+    exec -draft "<space>%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
     eval %sh{
         eval set -- "$kak_opt_snippets"
         first=0
@@ -30,7 +30,7 @@ def snippets-expand-trigger-internal -hidden -params ..1 %{
             else
                 printf '} catch %%{'
             fi
-            printf "exec -draft \"%%arg{1}<a-k>%s<ret>d\"\n" "$2"
+            printf "exec -draft \"<space>%%arg{1}<a-k>%s<ret>d\"\n" "$2"
             printf "snippets %%{%s}\n" "$1"
             shift 3
         done

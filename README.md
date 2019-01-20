@@ -14,9 +14,8 @@ Thie plugin has a dependency on `perl`.
 
 ## Usage
 
-The extension is configured via three options:
-* `snippets` `[str-list]` is an alternating list of snippet names and commands (e.g. `snip-1` `snip-1-command` `snip-2` `snip-2-command`...). When the snippet is referenced by name, the associated command is run.  
-* `snippets_triggers` `[str-list]` is an alternating list of triggers and snippet names (e.g. `trig-1` `snip-1` `trig-2` `snip-2`...). The snippet names must match the ones in the other option.  
+The extension is configured via two options:
+* `snippets` `[str-list]` is a list of {snippet name, snippet trigger, snippet command} tuples. The name is the identifier of the snippet, the trigger is a short string that identifies the snippet, and the command is what gets `eval`'d when the snippet is activated. In practice it's just a flat list that looks like `snip-1` `snip-1-trigger` `snip-1-command` `snip-2` `snip-2-trigger` `snip-2-command`...  
 * `snippets_auto_expand` `[bool]` controls whether triggers are automatically expanded when they are typed in insert mode. `true` by default.  
 
 Snippets can be selected manually with the commands `snippet` and `snippets-menu`. The triggers can also be expanded manually `snippets-expand-trigger`.
@@ -44,6 +43,7 @@ When a snippet is inserted with `snippet-insert`, the first placeholder(s) is au
 
 ## Changelog
 
+* `snippets_triggers` and `snippets` have been merged into a single option
 * triggers can now be manually expanded by calling the `snippets-expand-trigger` command on a valid trigger
 * `snippets_auto_expand` is now a boolean that controls whether auto-expansion of triggers is enabled
 * `snippets_auto_expand` was renamed to `snippets_triggers`

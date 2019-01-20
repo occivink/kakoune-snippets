@@ -1,6 +1,45 @@
+# GENERIC SNIPPET PART
+
 decl str-list snippets
-decl str-list snippets_triggers
 decl bool snippets_auto_expand true
+
+decl -hidden regex snippets_expand_filter "\A\z" # doing <a-k>\A\z<ret> will always fail
+
+hook global WinSetOption 'snippets=$' %{
+    set window snippets_expand_filter "\A\z"
+}
+hook global WinSetOption 'snippets=.+$' %{
+    set window snippets_expand_filter %sh{
+        printf '\A\b('
+        eval set -- "$kak_opt_snippets"
+        while [ $# -ne 0 ]; do
+            printf '%s|' "$2"
+            shift 3
+        done
+        printf ')\b\z'
+    }
+}
+
+def snippets-expand-trigger-internal -hidden -params ..1 %{
+    # early-out if we're not selecting a valid trigger
+    exec -draft "%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
+    eval %sh{
+        eval set -- "$kak_opt_snippets"
+        first=0
+        while [ $# -ne 0 ]; do
+            if [ $first -eq 0 ]; then
+                printf 'try %%{'
+                first=1
+            else
+                printf '} catch %%{'
+            fi
+            printf "exec -draft \"%%arg{1}<a-k>%s<ret>d\"\n" "$2"
+            printf "snippets %%{%s}\n" "$1"
+            shift 3
+        done
+        printf '}'
+    }
+}
 
 hook global WinSetOption 'snippets_auto_expand=false$' %{
     rmhooks window snippets-auto-expand
@@ -14,91 +53,86 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     }
 }
 
-decl -hidden regex snippets_expand_filter "\A\z" # doing <a-k>\A\z<ret> will always fail
-
-hook global WinSetOption 'snippets_triggers=$' %{
-    set window snippets_expand_filter "\A\z"
-}
-hook global WinSetOption 'snippets_triggers=.+$' %{
-    set window snippets_expand_filter %sh{
-        printf '\A\b('
-        eval set -- "$kak_opt_snippets_triggers"
-        while [ $# -ne 0 ]; do
-            printf '%s|' "$1"
-            shift 2
-        done
-        printf ')\b\z'
-    }
-}
-
-def -hidden snippets-expand-trigger-internal -params ..1 %{
-    # early-out if we're not selecting a valid trigger
-    exec -draft "%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
-    eval %sh{
-        eval set -- "$kak_opt_snippets_triggers"
-        first=0
-        while [ $# -ne 0 ]; do
-            if [ $first -eq 0 ]; then
-                printf 'try %%{'
-                first=1
-            else
-                printf '} catch %%{'
-            fi
-            printf "exec -draft \"%%arg{1}<a-k>%s<ret>d\"\n" "$1"
-            printf "snippets %%{%s}\n" "$2"
-            shift 2
-        done
-        printf '}'
-    }
-}
-
-def snippets-expand-trigger -params ..1 %{
+def snippets-expand-trigger %{
     try %{
-        snippets-expand-trigger-internal %arg{@}
+        snippets-expand-trigger-internal b
     } catch %{
         fail 'Not a valid trigger'
     }
 }
 
-def snippets-info %{
-    info -title Snippets %sh{
-        eval set -- "$kak_opt_snippets_triggers"
-        maxlen=0
+def snippets-impl -hidden -params 1.. %{
+    eval %sh{
+        use=$1
+        shift 1
+        index=4
         while [ $# -ne 0 ]; do
-            if [ ${#1} -gt $maxlen ]; then
-                maxlen=${#1}
+            if [ "$1" = "$use" ]; then
+                printf "eval %%arg{%s}" "$index"
+                exit
             fi
-            shift 2
+            index=$((index + 3))
+            shift 3
         done
-        eval set -- "$kak_opt_snippets"
-        if [ $# -eq 0 ]; then printf 'No snippets defined'; exit; fi
-        shifted=0
+        printf "fail 'Snippet not found'"
+    }
+}
+
+def snippets -params 1 -shell-script-candidates %{
+    eval set -- "$kak_opt_snippets"
+    while [ $# -ne 0 ]; do
+        printf '%s\n' "$1"
+        shift 3
+    done
+} %{
+    snippets-impl %arg{1} %opt{snippets}
+}
+
+def snippets-menu-impl -hidden -params .. %{
+    eval %sh{
+        printf 'menu'
+        i=1
         while [ $# -ne 0 ]; do
-            if [ $maxlen -eq 0 ]; then
-                printf '%s\n' "$1"
-                shift 2
-            else
-                snipname="$1"
-                eval set -- "$kak_opt_snippets_triggers"
-                found=0
-                while [ $# -ne 0 ]; do
-                    if [ "$2" = "$snipname" ]; then
-                        printf "%${maxlen}s ➡ %s\n" "$1" "$2"
-                        found=1
-                        break
-                    fi
-                    shift 2
-                done
-                if [ $found -eq 0 ]; then
-                    printf "%${maxlen}s    %s\n" "" "$snipname"
-                fi
-                shifted=$((shifted+2))
-                eval set -- "$kak_opt_snippets"
-                shift "$shifted"
-            fi
+            printf " %%arg{%s}" $i
+            printf " 'snippets %%arg{%s}'" $i
+            i=$((i+3))
+            shift 3
         done
     }
 }
+
+def snippets-menu %{
+    snippets-menu-impl %opt{snippets}
+}
+
+def snippets-info %{
+    info -title Snippets %sh{
+        eval set -- "$kak_opt_snippets"
+        if [ $# -eq 0 ]; then printf 'No snippets defined'; exit; fi
+        maxtriglen=0
+        while [ $# -ne 0 ]; do
+            if [ ${#2} -gt $maxtriglen ]; then
+                maxtriglen=${#2}
+            fi
+            shift 3
+        done
+        eval set -- "$kak_opt_snippets"
+        while [ $# -ne 0 ]; do
+            if [ $maxtriglen -eq 0 ]; then
+                printf '%s\n' "$1"
+            else
+                if [ "$2" = "" ]; then
+                    printf "%${maxtriglen}s   %s\n" "" "$1"
+                else
+                    printf "%${maxtriglen}s ➡ %s\n" "$2" "$1"
+                fi
+            fi
+            shift 3
+        done
+    }
+}
+
+# SNIPPET-INSERT PART
 
 decl -hidden range-specs snippets_placeholders
 decl -hidden int-list snippets_placeholder_groups
@@ -272,48 +306,4 @@ def snippets-select-next-placeholders %{
 
         printf "select %s\n" "$selections"
     }
-}
-
-def snippets-impl -hidden -params 1.. %{
-    eval %sh{
-        use=$1
-        shift 1
-        index=3
-        while [ $# -ne 0 ]; do
-            if [ "$1" = "$use" ]; then
-                printf "eval %%arg{%s}" "$index"
-                exit
-            fi
-            index=$((index + 2))
-            shift 2
-        done
-        printf "fail 'Snippet not found'"
-    }
-}
-
-def snippets -params 1 -shell-script-candidates %{
-    eval set -- "$kak_opt_snippets"
-    while [ $# -ne 0 ]; do
-        printf '%s\n' "$1"
-        shift 2
-    done
-} %{
-    snippets-impl %arg{1} %opt{snippets}
-}
-
-def snippets-menu-impl -hidden -params .. %{
-    eval %sh{
-        printf 'menu'
-        i=1
-        while [ $# -ne 0 ]; do
-            printf " %%arg{%s}" $i
-            printf " 'snippets %%arg{%s}'" $i
-            i=$((i+2))
-            shift 2
-        done
-    }
-}
-
-def snippets-menu %{
-    snippets-menu-impl %opt{snippets}
 }

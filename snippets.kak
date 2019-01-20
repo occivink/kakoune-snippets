@@ -1,8 +1,5 @@
 # GENERIC SNIPPET PART
 
-decl str-list snippets
-decl bool snippets_auto_expand true
-
 decl -hidden regex snippets_expand_filter "\A\z" # doing <a-k>\A\z<ret> will always fail
 
 hook global WinSetOption 'snippets=$' %{
@@ -52,6 +49,10 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
         }
     }
 }
+
+decl str-list snippets
+# this one must be declared after the hook, otherwise it might not be enabled right away
+decl bool snippets_auto_expand true
 
 def snippets-expand-trigger %{
     try %{

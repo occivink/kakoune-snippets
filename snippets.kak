@@ -10,13 +10,13 @@ hook global WinSetOption 'snippets=$' %{
 }
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_expand_filter %sh{
-        printf '\A\b('
+        printf %s '\A\b('
         eval set -- "$kak_opt_snippets"
         while [ $# -ne 0 ]; do
             printf '%s|' "$2"
             shift 3
         done
-        printf ')\b\z'
+        printf %s ')\b\z'
     }
 }
 

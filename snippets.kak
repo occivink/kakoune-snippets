@@ -7,8 +7,9 @@ hook global WinSetOption 'snippets=$' %{
 }
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_expand_filter %sh{
-        printf %s '\A\b('
         eval set -- "$kak_opt_snippets"
+        if [ $(($#%3)) -ne 0 ]; then exit; fi
+        printf %s '\A\b('
         while [ $# -ne 0 ]; do
             printf '%s|' "$2"
             shift 3
@@ -22,6 +23,7 @@ def snippets-expand-trigger-internal -hidden -params ..1 %{
     exec -draft "<space>%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
     eval %sh{
         eval set -- "$kak_opt_snippets"
+        if [ $(($#%3)) -ne 0 ]; then exit; fi
         first=0
         while [ $# -ne 0 ]; do
             if [ $first -eq 0 ]; then
@@ -81,6 +83,7 @@ def snippets-impl -hidden -params 1.. %{
 
 def snippets -params 1 -shell-script-candidates %{
     eval set -- "$kak_opt_snippets"
+    if [ $(($#%3)) -ne 0 ]; then exit; fi
     while [ $# -ne 0 ]; do
         printf '%s\n' "$1"
         shift 3
@@ -91,6 +94,7 @@ def snippets -params 1 -shell-script-candidates %{
 
 def snippets-menu-impl -hidden -params .. %{
     eval %sh{
+        if [ $(($#%3)) -ne 0 ]; then exit; fi
         printf 'menu'
         i=1
         while [ $# -ne 0 ]; do
@@ -109,6 +113,7 @@ def snippets-menu %{
 def snippets-info %{
     info -title Snippets %sh{
         eval set -- "$kak_opt_snippets"
+        if [ $(($#%3)) -ne 0 ]; then printf "Invalid 'snippets' value"; exit; fi
         if [ $# -eq 0 ]; then printf 'No snippets defined'; exit; fi
         maxtriglen=0
         while [ $# -ne 0 ]; do

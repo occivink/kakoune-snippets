@@ -70,7 +70,6 @@ It's done using kitty's remote control features, a 'manuscript' and a script to 
 ## Similar extensions
 
 https://github.com/alexherbo2/snippets.kak  
-https://github.com/JJK96/kakoune-snippets  
 https://github.com/shachaf/kak/blob/master/scripts/snippet.kak  
 
 ## License

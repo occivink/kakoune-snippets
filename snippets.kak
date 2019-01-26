@@ -9,34 +9,36 @@ hook global WinSetOption 'snippets=.+$' %{
     set window snippets_expand_filter %sh{
         eval set -- "$kak_opt_snippets"
         if [ $(($#%3)) -ne 0 ]; then exit; fi
-        printf %s '\A\b('
+        printf %s '('
         while [ $# -ne 0 ]; do
             printf '%s|' "$2"
             shift 3
         done
-        printf %s ')\b\z'
+        printf %s ')'
     }
 }
 
 def snippets-expand-trigger-internal -hidden -params ..1 %{
     # early-out if we're not selecting a valid trigger
-    exec -draft "<space>%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
-    eval %sh{
-        eval set -- "$kak_opt_snippets"
-        if [ $(($#%3)) -ne 0 ]; then exit; fi
-        first=0
-        while [ $# -ne 0 ]; do
-            if [ $first -eq 0 ]; then
-                printf 'try %%{'
-                first=1
-            else
-                printf '} catch %%{'
-            fi
-            printf "exec -draft \"<space>%%arg{1}<a-k>\A%s\z<ret>d\"\n" "$2"
-            printf "snippets %%{%s}\n" "$1"
-            shift 3
-        done
-        printf '}'
+    evaluate-commands -save-regs "a" %{
+        exec -draft %{<a-?>%opt{snippets_expand_filter}<a-!><ret><a-;>H"aZ}
+        eval %sh{
+            eval set -- "$kak_opt_snippets"
+            if [ $(($#%3)) -ne 0 ]; then exit; fi
+            first=0
+            while [ $# -ne 0 ]; do
+                if [ $first -eq 0 ]; then
+                    printf 'try %%{'
+                    first=1
+                else
+                    printf '} catch %%{'
+                fi
+                printf "exec -draft %%{\"az<a-k>%s<ret>d}\n" "$2"
+                printf "snippets %%{%s}\n" "$1"
+                shift 3
+            done
+            printf '}'
+        }
     }
 }
 

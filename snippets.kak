@@ -33,7 +33,7 @@ def snippets-expand-trigger-internal -hidden -params ..1 %{
                 else
                     printf '} catch %%{'
                 fi
-                printf "exec -draft %%{\"az<a-k>%s<ret>d}\n" "$2"
+                printf "exec -draft %%{\"az<a-k>\A%s\z<ret>d}\n" "$2"
                 printf "snippets %%{%s}\n" "$1"
                 shift 3
             done

@@ -18,9 +18,24 @@ The extension is configured via two options:
 * `snippets` `[str-list]` is a list of {name, trigger, command} tuples. The name is the identifier of the snippet, the trigger is a short string that identifies the snippet, and the command is what gets `eval`'d when the snippet is activated. In practice it's just a flat list that looks like `snip1` `snip1-trigger` `snip1-command` `snip2` `snip2-trigger` `snip2-command`...  
 * `snippets_auto_expand` `[bool]` controls whether triggers are automatically expanded when they are typed in insert mode. `true` by default.  
 
-Snippets can be selected manually with the commands `snippet` and `snippets-menu`. The triggers can also be expanded manually `snippets-expand-trigger`.
+Snippets can be selected manually with the commands `snippet` and `snippets-menu`.
 
 At any moment, the `snippets-info` command can be used to show the available snippets and their respective triggers.
+
+### Triggers
+
+Snippets can be executed when a certain string is written directly in the buffer with the help of triggers. To each snippet is associated a regex which we call a trigger.
+
+Triggers can be automatically expanded with the help of the `snippets_auto_expand`, or they can be expanded manually by using the `snippets-expand-trigger` command. By default, this command tries to expand the current selection if it is a trigger, but you can also pass it an argument to select a different part of the buffer.  
+For example, this call will try to select a trigger on the current line and expand it. If it fails, the selection stays unmodified.
+```
+snippets-expand-trigger %{
+    reg / "%opt{snippets_triggers_regex}\z"
+    exec 'hGhs<ret>'
+}
+```
+
+If a snippet does not have a trigger (i.e. it's empty), you won't be able to use it via expansion, but the basic commands `snippet` and `snippet-menu` can still be used.
 
 ### Defining your own snippets
 
@@ -60,7 +75,7 @@ If you don't use it, there is no runtime cost (except when executing a snippet o
 
 ### What's with escaping, what kind of characters can I use and not use?
 
-You should be able to use anything.
+You should be able to use anything. Triggers are currently restricted to at most 6 characters (at least for auto-expansion), but if you have a reasonable use case for more we can raise it. The number is arbitrary.
 
 ### My snippets are expanding too greedily. If I type 'before', I don't want my 'for' snippet to be expanded.
 

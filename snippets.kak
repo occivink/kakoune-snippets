@@ -1,42 +1,72 @@
 # GENERIC SNIPPET PART
 
-decl -hidden regex snippets_expand_filter "\A\z" # doing <a-k>\A\z<ret> will always fail
+decl -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
 
 hook global WinSetOption 'snippets=$' %{
-    set window snippets_expand_filter "\A\z"
+    set window snippets_triggers_regex "\A\z"
 }
 hook global WinSetOption 'snippets=.+$' %{
-    set window snippets_expand_filter %sh{
+    set window snippets_triggers_regex %sh{
         eval set -- "$kak_opt_snippets"
-        if [ $(($#%3)) -ne 0 ]; then exit; fi
-        printf %s '\A\b('
+        if [ $# -eq 0 ] || [ $(($#%3)) -ne 0 ]; then printf '\A\z'; exit; fi
+        printf '('
+        printf '%s' "$2"
+        shift 3
         while [ $# -ne 0 ]; do
-            printf '%s|' "$2"
+            printf '|%s' "$2"
             shift 3
         done
-        printf %s ')\b\z'
+        printf ')'
     }
 }
 
 def snippets-expand-trigger-internal -hidden -params ..1 %{
-    # early-out if we're not selecting a valid trigger
-    exec -draft "<space>%arg{1}<a-k>%opt{snippets_expand_filter}<ret>"
-    eval %sh{
-        eval set -- "$kak_opt_snippets"
-        if [ $(($#%3)) -ne 0 ]; then exit; fi
-        first=0
-        while [ $# -ne 0 ]; do
-            if [ $first -eq 0 ]; then
-                printf 'try %%{'
-                first=1
-            else
-                printf '} catch %%{'
-            fi
-            printf "exec -draft \"<space>%%arg{1}<a-k>\A%s\z<ret>d\"\n" "$2"
-            printf "snippets %%{%s}\n" "$1"
-            shift 3
-        done
-        printf '}'
+    eval -save-regs '/s' %{
+        eval -draft %{
+            eval %arg{1}
+            eval %sh{
+                # we're at two levels of nested ', so we need to quadruple them up
+                # in the arbitrary user input (snippet trigger and snippet name)
+                quadrupleupsinglequotes()
+                {
+                    rest="$1"
+                    while :; do
+                        beforequote="${rest%%"'"*}"
+                        if [ "$rest" = "$beforequote" ]; then
+                            printf %s "$rest"
+                            break
+                        fi
+                        rest="${rest#*"'"}"
+                        printf "%s''''" "$beforequote"
+                    done
+                }
+
+                eval set -- "$kak_opt_snippets"
+                if [ $(($#%3)) -ne 0 ]; then exit; fi
+                first=0
+                while [ $# -ne 0 ]; do
+                    if [ $first -eq 0 ]; then
+                        printf "try '\n"
+                        first=1
+                    else
+                        printf "' catch '\n"
+                    fi
+                    # put the trigger into %reg{/} as \Atrig\z
+                    printf "reg / ''\A"
+                    quadrupleupsinglequotes "$2"
+                    printf "\z''\n"
+                    printf "exec -draft <space><a-k><ret>d\n"
+                    # maybe directly eval $3 instead of going through this indirection?
+                    printf "snippets ''"
+                    quadrupleupsinglequotes "$1"
+                    printf "''\n"
+                    shift 3
+                done
+                printf "'"
+            }
+            reg s %val{selections_desc}
+        }
+        eval select %reg{s}
     }
 }
 
@@ -47,7 +77,15 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     rmhooks window snippets-auto-expand
     hook -group snippets-auto-expand window InsertChar .* %{
         try %{
-            snippets-expand-trigger-internal b
+            snippets-expand-trigger-internal %{
+                # we don't have to reset %reg{/} since the internal command does it
+                # but normally we should
+                reg / "%opt{snippets_triggers_regex}\z"
+                # select the 10 previous character and abort if it doesn't end with a trigger
+                # so the trigger must be anchored to the cursor to be considered
+                # arbitrary, but should be enough
+                exec ';h10Hs<ret>'
+            }
         }
     }
 }

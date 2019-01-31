@@ -199,7 +199,7 @@ def snippets-insert -hidden -params 1 %<
                     printf "%${kak_opt_indentwidth}s"
                 fi
             }
-            exec -draft 's((?<lt>!\$)(?:\$\$)*|\A)\K(\$\{indent\})<ret>R'
+            exec -draft 's\A\t+<ret>s.<ret>R'
         }
         try %<
             # select things that look like placeholders

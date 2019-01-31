@@ -189,8 +189,8 @@ def snippets-insert -hidden -params 1 %<
         reg '"' %arg{1}
         exec <a-P>
         # align everything with the current line
-        exec -itersel -draft '<a-s>1<a-&>'
-        # replace ${indent} with the appropriate indent
+        exec -itersel '<a-s><a-;>1&'
+        # replace leading tabs with the appropriate indent
         try %{
             reg '"' %sh{
                 if [ $kak_opt_indentwidth -eq 0 ]; then

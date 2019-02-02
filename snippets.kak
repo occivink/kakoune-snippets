@@ -8,15 +8,23 @@ hook global WinSetOption 'snippets=$' %{
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_triggers_regex %sh{
         eval set -- "$kak_opt_snippets"
-        if [ $# -eq 0 ] || [ $(($#%3)) -ne 0 ]; then printf '\A\z'; exit; fi
-        printf '('
-        printf '%s' "$2"
-        shift 3
+        if [ $(($#%3)) -ne 0 ]; then printf '\A\z'; exit; fi
+        res=""
         while [ $# -ne 0 ]; do
-            printf '|%s' "$2"
+            if [ -n "$2" ]; then
+                if [ -z "$res" ]; then
+                    res="$2"
+                else
+                    res="$res|$2"
+                fi
+            fi
             shift 3
         done
-        printf ')'
+        if [ -z "$res" ]; then
+            printf "\A\z"
+        else
+            printf '(%s)' "$res"
+        fi
     }
 }
 
@@ -59,6 +67,10 @@ def snippets-expand-trigger -params ..1 %{
                 if [ $(($#%3)) -ne 0 ]; then exit; fi
                 first=0
                 while [ $# -ne 0 ]; do
+                    if [ -z "$2" ]; then
+                        shift 3
+                        continue
+                    fi
                     if [ $first -eq 0 ]; then
                         printf "try '\n"
                         first=1

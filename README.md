@@ -26,11 +26,13 @@ At any moment, the `snippets-info` command can be used to show the available sni
 
 Snippets can be executed when a certain string is written directly in the buffer with the help of triggers. To each snippet is associated a regex which we call a trigger.
 
-Triggers can be automatically expanded with the help of the `snippets_auto_expand`, or they can be expanded manually by using the `snippets-expand-trigger` command. By default, this command tries to expand the current selection if it is a trigger, but you can also pass it an argument to select a different part of the buffer.  
+Triggers can be automatically expanded with the help of the `snippets_auto_expand`, or they can be expanded manually by using the `snippets-expand-trigger` command. By default, this command tries to expand the current selection if it is a trigger, but you can also pass it an argument to select a different part of the buffer. The option `snippets_triggers_regex` can be used to help select triggers. It's a simple alternation of all triggers as a single regex.
+
 For example, this call will try to select a trigger on the current line and expand it. If it fails, the selection stays unmodified.
 ```
 snippets-expand-trigger %{
-    reg / "%opt{snippets_triggers_regex}\z"
+    reg / "%opt{snippets_triggers_regex}"
+    # select to the beginning of the line, and then subselect for one of the triggers
     exec 'hGhs<ret>'
 }
 ```

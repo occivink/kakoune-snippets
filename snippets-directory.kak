@@ -12,7 +12,7 @@ define-command snippets-directory-reload %{
         doubleupsinglequotes()
         {
             rest="$1"
-            levels="$2"
+            levels="$2" # "levels" grows in powers of 2 as more escaping is needed
             while :; do
                 beforequote="${rest%%"'"*}"
                 if [ "$rest" = "$beforequote" ]; then
@@ -42,7 +42,7 @@ define-command snippets-directory-reload %{
                 [ ! -f "$snippet" ] && continue      # not a regular file
                 name="${snippet#* - }"
                 [ "$name" = "" ] && continue         # no valid snippet name
-                if [ "$name" = "$snippet" ]; then    # no ' - ' in filename, no trigger
+                if [ "$name" = "$snippet" ]; then    # no ' - ' in filename -> no trigger
                     trigger=""
                 else
                     trigger="${snippet%% - *}"
@@ -61,14 +61,22 @@ define-command snippets-directory-reload %{
                 doubleupsinglequotes "$name" 2
                 printf "'' ''"
                 doubleupsinglequotes "$trigger" 2
-                printf "'' ''"
+                printf "'' ''snippets-insert ''''"
+                # we're hitting escaping levels that shouldn't even be possible
+                firstline=0
                 cat "$snippet" | while read line; do
-                    doubleupsinglequotes "$line" 2
+                    if [ "$firstline" -eq 0 ]; then
+                        firstline=1
+                    else
+                        printf "\n"
+                    fi
+                    doubleupsinglequotes "$line" 4
                 done
-                printf "''"
+                printf "'''' ''"
             done
             [ $first -eq 1 ] && printf "'\n"
             cd ..
         done
     }
+    # TODO unset and re-set the 'filetype' of each open buffer so that it has the latest snippets
 }

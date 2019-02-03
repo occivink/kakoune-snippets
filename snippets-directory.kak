@@ -28,6 +28,8 @@ define-command snippets-directory-reload %{
                 rest="${rest#*"'"}"
             done
         }
+        IFS='
+'
         cd "$kak_config"
         if [ ! -d snippets ]; then
             echo 'echo -debug "No snippets directory"'
@@ -64,14 +66,14 @@ define-command snippets-directory-reload %{
                 printf "'' ''snippets-insert ''''"
                 # we're hitting escaping levels that shouldn't even be possible
                 firstline=0
-                cat "$snippet" | while read line; do
+                while read -r line; do
                     if [ "$firstline" -eq 0 ]; then
                         firstline=1
                     else
                         printf "\n"
                     fi
                     doubleupsinglequotes "$line" 4
-                done
+                done < "$snippet"
                 printf "'''' ''"
             done
             [ $first -eq 1 ] && printf "'\n"

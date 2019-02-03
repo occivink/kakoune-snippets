@@ -253,9 +253,8 @@ def snippets-insert -hidden -params 1 %<
     try snippets-select-next-placeholders
 >
 
-# TODO review escaping here
-def -hidden snippets-insert-perl-impl %!
-    eval %sh& # $kak_selections
+def -hidden snippets-insert-perl-impl %<
+    eval %sh< # $kak_selections
         perl -e '
 use strict;
 use warnings;
@@ -287,9 +286,6 @@ foreach my $i (0 .. $#sel_content) {
     my $placeholder_id = $placeholder_ids[$i];
     if (exists $placeholder_id_to_default{$placeholder_id}) {
         my $def = $placeholder_id_to_default{$placeholder_id};
-        # double up interrogation and exclamation points
-        $def =~ s/!!/!!!!/g;
-        $def =~ s/&&/&&&&/g;
         # de-double up closing braces
         $def =~ s/\}\}/}/g;
         # double up single-quotes
@@ -301,12 +297,12 @@ foreach my $i (0 .. $#sel_content) {
 }
 print("\n");
 '
-    &
+    >
     exec R
     set window snippets_placeholders %val{timestamp}
     # no need to set the NextPlaceholders face yet, select-next-placeholders will take care of that
     eval -itersel %{ set -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
-!
+>
 
 def snippets-select-next-placeholders %{
     update-option window snippets_placeholders

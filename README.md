@@ -26,7 +26,8 @@ At any moment, the `snippets-info` command can be used to show the available sni
 
 Snippets can be executed when a certain string is written directly in the buffer with the help of triggers. To each snippet is associated a regex which we call a trigger.
 
-Triggers can be automatically expanded with the help of the `snippets_auto_expand`, or they can be expanded manually by using the `snippets-expand-trigger` command. By default, this command tries to expand the current selection if it is a trigger, but you can also pass it an argument to select a different part of the buffer. The option `snippets_triggers_regex` can be used to help select triggers. It's a simple alternation of all triggers as a single regex.
+Triggers can be automatically expanded by setting `snippets_auto_expand` to true, or they can be expanded manually by using the `snippets-expand-trigger` command. By default, this command tries to expand the current selection if it is a trigger, but you can also pass it an argument to select a different part of the buffer. 
+The option `snippets_triggers_regex` can be used to help select triggers. It's a simple alternation of all triggers as a single regex.
 
 For example, this call will try to select a trigger on the current line and expand it. If it fails, the selection stays unmodified.
 ```
@@ -44,6 +45,31 @@ If a snippet does not have a trigger (i.e. it's empty), you won't be able to use
 Snippet commands are just regular kakoune command, so you can do just about anything in them.
 
 Ideally, your snippet command should work in both Insert and Normal mode, so that it can be used via auto-expansion and manual snippet call (be careful about this [kakoune issue](https://github.com/mawww/kakoune/issues/1916)).
+
+### `snippets-directory.kak`
+
+`snippets-directory` is an *optional* script that can be used to define snippets as separate files instead of via an option. It expects snippets to be defined like so:
+
+```
+.config/
+└── kak/
+    ├── snippets/
+    │   ├── cpp/
+    │   │   ├── \belif - if { } else { }
+    │   │   ├── \bfor - For loop
+    │   │   └── \bif - if { }
+    │   └── kak/
+    │       ├── def - Command definition
+    │       └── try - try %{ } catch %{ }
+    ├── snippets-directory.kak
+    ├── snippets.kak
+    └── ...
+```
+Each directory inside `snippets/` defines the filetype to which the snippets apply to. Each file inside a filetype directory defines a single snippet: the filename defines the snippet trigger and name (respectively everything before and after the first ` - `). The content of the file is what gets inserted inside the buffer (using the `snippet-insert` command).
+
+It is generally less flexible than setting the `snippets` option by hand, but it should also be easier to use.
+
+It is not possible to use a literal `/` in a snippet name or trigger with this method.
 
 ### `snippet-insert`
 

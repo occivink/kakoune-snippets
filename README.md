@@ -67,12 +67,14 @@ Ideally, your snippet command should work in both Insert and Normal mode, so tha
     ├── snippets.kak
     └── ...
 ```
-Each directory inside `snippets/` defines the filetype to which the snippets apply to. The filetype is interpreted as a regex, so you can use `\w+` to match any filetype, or `(cpp|kak)` to make a snippet apply to multiple filetypes.
+Each directory inside `snippets/` defines the filetype to which the snippets apply to. The filetype is interpreted as a regex, so you can use `\w+` to match any filetype, or `(cpp|kak)` to make a snippet apply to multiple filetypes.  
 Each file inside a filetype directory defines a single snippet: the filename defines the snippet trigger and name (respectively everything before and after the first ` - `). The content of the file is what gets inserted inside the buffer (using the `snippet-insert` command).
 
 It is generally less flexible than setting the `snippets` option by hand, but it should also be easier to use.
 
 It is not possible to use a literal `/` in a snippet name or trigger with this method.
+
+Multiple snippets directories may be specified with the `snippets_directories` option (`%val{config}/snippets` by default) which takes multiple paths, relative or absolute. You can load project-specific snippets this way.
 
 ### `snippet-insert`
 
@@ -101,7 +103,7 @@ When a snippet is inserted with `snippet-insert`, the first placeholder(s) is au
 
 ### What's the performance impact of the extension?
 
-If you use the auto-expansion feature, a runtime hook is run on each Insert mode key press. It only uses a shell scope in case of a match, and stop early otherwise.
+If you use the auto-expansion feature, a runtime hook is run on each Insert mode key press. It only uses a shell scope in case of a match, and stop early otherwise.  
 If you don't use it, there is no runtime cost (except when executing a snippet of course).
 
 ### What's with escaping, what kind of characters can I use and not use?

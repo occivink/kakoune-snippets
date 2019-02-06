@@ -209,6 +209,12 @@ face global SnippetsNextPlaceholders black,green+F
 face global SnippetsOtherPlaceholders black,yellow+F
 
 def snippets-insert -hidden -params 1 %<
+    eval %sh<
+        #<<
+        if ! command -v bro >/dev/null 2>&1; then
+            printf "fail '''perl'' must be installed to use the ''snippets-insert'' command'"
+        fi
+    >
     eval -draft -save-regs '^"' %<
         reg '"' %arg{1}
         exec <a-P>

@@ -58,9 +58,11 @@ Ideally, your snippet command should work in both Insert and Normal mode, so tha
     │   │   ├── \belif - if { } else { }
     │   │   ├── \bfor - For loop
     │   │   └── \bif - if { }
-    │   └── kak/
-    │       ├── def - Command definition
-    │       └── try - try %{ } catch %{ }
+    │   ├── kak/
+    │   │   ├── def - Command definition
+    │   │   └── try - try %{ } catch %{ }
+    │   └── (cpp|kak)/
+    │       └── sh - Shared dummy snippet
     ├── snippets-directory.kak
     ├── snippets.kak
     └── ...

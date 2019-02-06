@@ -82,7 +82,7 @@ Multiple snippets directories may be specified with the `snippets_directories` o
 
 * numbered placeholders (with `$n` or `${n}`) which can be iterated over sequentially. If multiple placeholders share the same number, multiple selections will be created when iterating.  
 * default placeholder text (with `${n:default text}`). The placeholder will be initialized to the specified default text. Placeholders that share the same number will also share their default text.  
-* 
+
 Tabs should be used for indentation when defining snippets, they will be automatically converted to the appropriate indentation level (depending on `indentwidth`)
 
 To use a literal `$` inside a call to `snippet-insert`  or a literal `}` inside a placeholder's default text, simply double it up.

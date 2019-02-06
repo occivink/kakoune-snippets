@@ -40,11 +40,11 @@ def snippets-expand-trigger -params ..1 %{
             # try %{
             #   reg / "\Atrig1\z"
             #   exec -draft <space><a-k><ret>d
-            #   snippets "snipname1"
+            #   reg c "snipcommand1"
             # } catch %{
             #   reg / "\Atrig2\z"
             #   exec -draft <space><a-k><ret>d
-            #   snippets "snipname2"
+            #   reg c "snipcommand2"
             # } catch %{
             #   ..
             # }
@@ -211,7 +211,7 @@ face global SnippetsOtherPlaceholders black,yellow+F
 def snippets-insert -hidden -params 1 %<
     eval %sh<
         #<<
-        if ! command -v bro >/dev/null 2>&1; then
+        if ! command -v perl >/dev/null 2>&1; then
             printf "fail '''perl'' must be installed to use the ''snippets-insert'' command'"
         fi
     >

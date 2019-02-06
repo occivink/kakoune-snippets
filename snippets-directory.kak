@@ -3,7 +3,7 @@ hook -once global KakBegin '' snippets-directory-reload
 decl str-list snippets_directories "%val{config}/snippets"
 
 define-command snippets-directory-disable %{
-    rmhooks global snippets-directory-.*
+    rmhooks global snippets-directory
     eval -buffer * "unset buffer snippets"
 }
 
@@ -11,6 +11,7 @@ define-command snippets-directory-reload %{
     snippets-directory-disable
     # it might be more efficient to do everything in a single awk/perl/python subprocess
     # left as an exercise to the reader
+    hook -group snippets-directory global BufSetOption filetype=.* %{ unset buffer snippets }
     eval %sh{
         doubleupsinglequotes()
         {
@@ -35,7 +36,7 @@ define-command snippets-directory-reload %{
 '
         eval set -- $kak_opt_snippets_directories
         for dir; do
-        (
+        ( # subshell to automatically go back to the starting dir
             if [ ! -d "$dir" ]; then
                 printf "echo -debug 'Snippets directory ''%s'' does not exist'\n" "$dir"
                 continue
@@ -56,9 +57,7 @@ define-command snippets-directory-reload %{
                     fi
 
                     if [ "$first" -eq 0 ]; then
-                        printf "hook -group 'snippets-directory-"
-                        doubleupsinglequotes "$filetype" 1
-                        printf "' global BufSetOption 'filetype="
+                        printf "hook -group 'snippets-directory' global BufSetOption 'filetype="
                         doubleupsinglequotes "$filetype" 1
                         printf "' 'set -add buffer snippets"
                         first=1

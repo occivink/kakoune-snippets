@@ -65,7 +65,8 @@ Ideally, your snippet command should work in both Insert and Normal mode, so tha
     ├── snippets.kak
     └── ...
 ```
-Each directory inside `snippets/` defines the filetype to which the snippets apply to. Each file inside a filetype directory defines a single snippet: the filename defines the snippet trigger and name (respectively everything before and after the first ` - `). The content of the file is what gets inserted inside the buffer (using the `snippet-insert` command).
+Each directory inside `snippets/` defines the filetype to which the snippets apply to. The filetype is interpreted as a regex, so you can use `\w+` to match any filetype, or `(cpp|kak)` to make a snippet apply to multiple filetypes.
+Each file inside a filetype directory defines a single snippet: the filename defines the snippet trigger and name (respectively everything before and after the first ` - `). The content of the file is what gets inserted inside the buffer (using the `snippet-insert` command).
 
 It is generally less flexible than setting the `snippets` option by hand, but it should also be easier to use.
 

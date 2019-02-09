@@ -2,7 +2,7 @@
 
 **Warning**: this plugin is still in its early stages so expect breakages. I'll try to keep the changelog (see below) up-to-date.
 
-(Yet another) [kakoune](http://kakoune.org) plugin for handling snippets.
+(Yet another) [kakoune](http://kakoune.org) plugin for handling snippets. For a comprehensive collection of snippets for this plugin, see [kakoune-snippet-collection](https://github.com/andreyorst/kakoune-snippet-collection)
 
 [![demo](https://asciinema.org/a/217470.png)](https://asciinema.org/a/217470)
 
@@ -113,10 +113,6 @@ You should be able to use anything. Triggers are currently restricted to at most
 ### My snippets are expanding too greedily. If I type 'before', I don't want my 'for' snippet to be expanded.
 
 You should use a stricter trigger for the snippet. For example, `\bfor` will only expand if `for` starts at a word boundary. Similarly, you can use `^` to match the start of a line.
-
-### Can you add snippets for language `X`?
-
-No, but you're welcome to start collecting them in the wiki.
 
 ### How did you do the demo?
 

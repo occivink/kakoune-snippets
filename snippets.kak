@@ -114,9 +114,9 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
                 # we don't have to reset %reg{/} since the internal command does it
                 # but normally we should
                 reg / "%opt{snippets_triggers_regex}\z"
-                # select the 6 previous character and abort if it doesn't end with a trigger
+                # select the 20 previous character and abort if it doesn't end with a trigger
                 # \z makes it so the trigger must be anchored to the cursor to be considered
-                exec ';h6Hs<ret>'
+                exec ';h20Hs<ret>'
             }
         }
     }

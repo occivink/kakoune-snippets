@@ -2,7 +2,7 @@
 
 **Warning**: this plugin is still in its early stages so expect breakages. I'll try to keep the changelog (see below) up-to-date.
 
-(Yet another) [kakoune](http://kakoune.org) plugin for handling snippets. For a comprehensive collection of snippets for this plugin, see [kakoune-snippet-collection](https://github.com/andreyorst/kakoune-snippet-collection)
+(Yet another) [kakoune](http://kakoune.org) plugin for handling snippets. For a comprehensive collection of snippets for various languages, see [kakoune-snippet-collection](https://github.com/andreyorst/kakoune-snippet-collection).
 
 [![demo](https://asciinema.org/a/217470.png)](https://asciinema.org/a/217470)
 
@@ -103,12 +103,12 @@ When a snippet is inserted with `snippet-insert`, the first placeholder(s) is au
 
 ### What's the performance impact of the extension?
 
-If you use the auto-expansion feature, a runtime hook is run on each Insert mode key press. It only uses a shell scope in case of a match, and stop early otherwise.  
+If you use the auto-expansion feature, a runtime hook is run on each Insert mode key press. It only uses a shell scope in case of a match, and stops early otherwise.  
 If you don't use it, there is no runtime cost (except when executing a snippet of course).
 
 ### What's with escaping, what kind of characters can I use and not use?
 
-You should be able to use anything. Triggers are currently restricted to at most 6 characters (at least for auto-expansion), but if you have a reasonable use case for more we can raise it. The number is arbitrary.
+You should be able to use anything. Triggers are currently restricted to at most 20 characters (at least for auto-expansion), but the number is arbitrary and we could raise it.
 
 ### My snippets are expanding too greedily. If I type 'before', I don't want my 'for' snippet to be expanded.
 

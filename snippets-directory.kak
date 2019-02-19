@@ -88,3 +88,46 @@ define-command snippets-directory-reload %{
     }
     # TODO unset and re-set the 'filetype' of each open buffer so that it has the latest snippets
 }
+
+
+define-command -docstring "snippets-add-snippet <trigger> <description> [<filetype>]: Create new snippet for given filetype.
+If filetype is ommited, current active filetype is used.
+If no current filetype available, snippet is added in global scope.
+If all parameters were ommited function will ask for <trigger> and <description> via prompt." \
+snippets-add-snippet -params 0..3 %{ evaluate-commands %sh{
+    if [ $# -ge 2 ]; then
+        printf "snippets-add-snippet-impl %%arg{1} %%arg{2} %%arg{3}"
+    else
+        printf "snippets-add-snippet-prompt"
+    fi
+}}
+
+define-command -hidden snippets-add-snippet-prompt %{ evaluate-commands %{
+    prompt "Trigger: " %{
+        declare-option -hidden str snippets_new_trigger %val{text}
+        prompt "Snippet Description: " %{
+            snippets-add-snippet-impl %opt{snippets_new_trigger} %val{text} %opt{filetype}
+        }
+    }
+}}
+
+define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-commands %sh{
+    trigger=$1; description=$2; filetype=$3
+    [ -z "$filetype" ] && filetype="${kak_opt_filetype:-.*}"
+    if [ -z "$kak_opt_snippets_directories" ]; then
+        printf "echo -markup %%{{Error}There's no snippet directory set in 'snippets_directories' option}"
+        exit
+    fi
+    if [ -z "${trigger##*/*}" ]; then
+        printf "echo -markup %%{{Error}Trigger can't contain '/' character}"
+    elif [ -z "${description##*/*}" ]; then
+        printf "echo -markup %%{{Error}Description can't contain '/' character}"
+    else
+        eval "set -- $kak_opt_snippets_directories"
+        while [ $# -gt 0 ]; do
+            menu="$menu %{$1/$filetype} %{evaluate-commands %{edit %{$1/$filetype/$trigger - $description}}}"
+            shift
+        done
+        printf "%s\n" "menu -auto-single $menu"
+    fi
+}}

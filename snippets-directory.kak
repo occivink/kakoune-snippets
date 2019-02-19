@@ -115,7 +115,7 @@ define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-command
     trigger=$1; description=$2; filetype=$3
     [ -z "$filetype" ] && filetype="${kak_opt_filetype:-.*}"
     if [ -z "$kak_opt_snippets_directories" ]; then
-        printf "echo -markup %%{{Error}There's no snippet directory set in 'snippets_directories' option}"
+        printf "echo -markup %%{{Error}There's no filename directory set in 'snippets_directories' option}"
         exit
     fi
     if [ -z "${trigger##*/*}" ]; then
@@ -126,13 +126,13 @@ define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-command
         eval "set -- $kak_opt_snippets_directories"
         printf 'menu -auto-single --'
         while [ $# -gt 0 ]; do
-            info="$1/$filetype"
-            [ -z "${info##*\'*}" ] && info=$(printf "%s\n" "$info" | sed "s/'/''/g")
-            printf " '%s' " "$info"
+            directory="$1/$filetype"
+            [ -z "${directory##*\'*}" ] && directory=$(printf "%s\n" "$directory" | sed "s/'/''/g")
+            printf " '%s' " "$directory"
 
-            snippet="$1/$filetype/$trigger - $description"
-            [ -z "${snippet##*\'*}" ] && snippet=$(printf "%s\n" "$snippet" | sed "s/'/''''/g")
-            printf " ' snippets-add-menu-action ''%s'' ' " "$snippet"
+            filename="$1/$filetype/$trigger - $description"
+            [ -z "${filename##*\'*}" ] && filename=$(printf "%s\n" "$filename" | sed "s/'/''''/g")
+            printf " ' snippets-add-menu-action ''%s'' ' " "$filename"
 
             shift
         done

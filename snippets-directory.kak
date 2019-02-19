@@ -124,14 +124,25 @@ define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-command
         printf "echo -markup %%{{Error}Description can't contain '/' character}"
     else
         eval "set -- $kak_opt_snippets_directories"
+        printf 'menu -auto-single --'
         while [ $# -gt 0 ]; do
-            menu_item=$(printf "%s\n" "$1/$filetype" | sed 's/&/&&/g')
-            snippet_path=$(printf "%s\n" "$1/$filetype" | sed -E 's/([?&!])/\1\1/g')
-            snippet_filename=$(printf "%s\n" "$trigger - $description" | sed -E 's/([?&!])/\1\1/g')
-            menu="$menu %&$menu_item& %? evaluate-commands %& nop %sh! [ -d '$snippet_path' ] || mkdir -p '$snippet_path' !; edit %!$snippet_path/$snippet_filename!; hook -group snippets-add-watchers buffer BufWritePost .* snippets-directory-reload & ?"
+            info="$1/$filetype"
+            [ -z "${info##*\'*}" ] && info=$(printf "%s\n" "$info" | sed "s/'/''/g")
+            printf " '%s' " "$info"
+
+            snippet="$1/$filetype/$trigger - $description"
+            [ -z "${snippet##*\'*}" ] && snippet=$(printf "%s\n" "$snippet" | sed "s/'/''''/g")
+            printf " ' snippets-add-menu-action ''%s'' ' " "$snippet"
+
             shift
         done
-        printf "%s\n" "menu -auto-single $menu"
     fi
 }}
 
+define-command -hidden snippets-add-menu-action -params 1 %{
+    nop %sh{
+        mkdir -p $(dirname "$1")
+    }
+    edit %arg{1}
+    hook -group snippets-add-watchers buffer BufWritePost .* snippets-directory-reload
+}

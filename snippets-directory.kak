@@ -1,18 +1,18 @@
 hook -once global KakBegin '' snippets-directory-reload
 
-decl str-list snippets_directories "%val{config}/snippets"
+declare-option str-list snippets_directories "%val{config}/snippets"
 
 define-command snippets-directory-disable %{
-    rmhooks global snippets-directory
-    eval -buffer * "unset buffer snippets"
+    remove-hooks global snippets-directory
+    evaluate-commands -buffer * "unset-option buffer snippets"
 }
 
 define-command snippets-directory-reload %{
     snippets-directory-disable
     # it might be more efficient to do everything in a single awk/perl/python subprocess
     # left as an exercise to the reader
-    hook -group snippets-directory global BufSetOption filetype=.* %{ unset buffer snippets }
-    eval %sh{
+    hook -group snippets-directory global BufSetOption filetype=.* %{ unset-option buffer snippets }
+    evaluate-commands %sh{
         doubleupsinglequotes()
         {
             rest="$1"

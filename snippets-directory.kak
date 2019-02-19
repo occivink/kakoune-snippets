@@ -125,7 +125,10 @@ define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-command
     else
         eval "set -- $kak_opt_snippets_directories"
         while [ $# -gt 0 ]; do
-            menu="$menu %{$1/$filetype} %{evaluate-commands %{ nop %sh{ [ -d '$1/$filetype' ] || mkdir -p '$1/$filetype' }; edit %{$1/$filetype/$trigger - $description}; hook -group snippets-add-watchers buffer BufWritePost .* snippets-directory-reload}}"
+            menu_item=$(printf "%s\n" "$1/$filetype" | sed 's/&/&&/g')
+            snippet_path=$(printf "%s\n" "$1/$filetype" | sed -E 's/([?&!])/\1\1/g')
+            snippet_filename=$(printf "%s\n" "$trigger - $description" | sed -E 's/([?&!])/\1\1/g')
+            menu="$menu %&$menu_item& %? evaluate-commands %& nop %sh! [ -d '$snippet_path' ] || mkdir -p '$snippet_path' !; edit %!$snippet_path/$snippet_filename!; hook -group snippets-add-watchers buffer BufWritePost .* snippets-directory-reload & ?"
             shift
         done
         printf "%s\n" "menu -auto-single $menu"

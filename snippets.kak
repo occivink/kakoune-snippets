@@ -383,3 +383,4 @@ def snippets-select-next-placeholders %{
         printf "select %s\n" "$selections"
     }
 }
+

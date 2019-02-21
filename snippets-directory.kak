@@ -91,9 +91,9 @@ define-command snippets-directory-reload %{
 
 
 define-command -docstring "snippets-add-snippet <trigger> <description> [<filetype>]: Create new snippet for given filetype.
-If filetype is ommited, current active filetype is used.
-If no current filetype available, snippet is added in global scope.
-If all parameters were ommited function will ask for <trigger> and <description> via prompt." \
+If filetype is ommited, the current active filetype is used.
+If 'filetype' is not currently defined, the snippet is added in global scope.
+If all parameters were ommited, <trigger> and <description> are asked via prompt." \
 snippets-add-snippet -params 0..3 %{ evaluate-commands %sh{
     if [ $# -ge 2 ]; then
         printf "snippets-add-snippet-impl %%arg{1} %%arg{2} %%arg{3}"
@@ -111,27 +111,27 @@ define-command -hidden snippets-add-snippet-prompt %{ evaluate-commands %{
     }
 }}
 
-define-command -hidden snippets-add-snippet-impl -params 2.. %{ evaluate-commands %sh{
+define-command -hidden snippets-add-snippet-impl -params 2..3 %{ evaluate-commands %sh{
     trigger=$1; description=$2; filetype=$3
     [ -z "$filetype" ] && filetype="${kak_opt_filetype:-.*}"
     if [ -z "$kak_opt_snippets_directories" ]; then
-        printf "echo -markup %%{{Error}There's no filename directory set in 'snippets_directories' option}"
+        printf "echo -markup %%{{Error}The 'snippets_directories' option must be defined}"
         exit
     fi
     if [ -z "${trigger##*/*}" ]; then
-        printf "echo -markup %%{{Error}Trigger can't contain '/' character}"
+        printf "echo -markup %%{{Error}Trigger cannot contain '/' character}"
     elif [ -z "${description##*/*}" ]; then
-        printf "echo -markup %%{{Error}Description can't contain '/' character}"
+        printf "echo -markup %%{{Error}Description cannot contain '/' character}"
     else
         eval "set -- $kak_opt_snippets_directories"
         printf 'menu -auto-single --'
-        while [ $# -gt 0 ]; do
-            directory="$1/$filetype"
-            [ -z "${directory##*\'*}" ] && directory=$(printf "%s\n" "$directory" | sed "s/'/''/g")
+        for dir do
+            directory="$dir/$filetype"
+            [ -z "${directory##*\'*}" ] && directory=$(printf %s "$directory" | sed "s/'/''/g")
             printf " '%s' " "$directory"
 
-            filename="$1/$filetype/$trigger - $description"
-            [ -z "${filename##*\'*}" ] && filename=$(printf "%s\n" "$filename" | sed "s/'/''''/g")
+            filename="$dir/$filetype/$trigger - $description"
+            [ -z "${filename##*\'*}" ] && filename=$(printf %s "$filename" | sed "s/'/''''/g")
             printf " ' snippets-add-menu-action ''%s'' ' " "$filename"
 
             shift

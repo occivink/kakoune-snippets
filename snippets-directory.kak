@@ -1,4 +1,4 @@
-hook -once global KakBegin '' snippets-directory-reload
+hook -once global KakBegin .* snippets-directory-reload
 
 declare-option str-list snippets_directories "%val{config}/snippets"
 

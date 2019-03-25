@@ -1,4 +1,4 @@
-hook -once global KakBegin .* snippets-directory-reload
+hook global KakBegin .* snippets-directory-reload
 
 declare-option str-list snippets_directories "%val{config}/snippets"
 
@@ -39,7 +39,7 @@ define-command snippets-directory-reload %{
         ( # subshell to automatically go back to the starting dir
             if [ ! -d "$dir" ]; then
                 printf "echo -debug 'Snippets directory ''%s'' does not exist'\n" "$dir"
-                continue
+                exit
             fi
             cd "$dir"
             for filetype in *; do
@@ -133,8 +133,6 @@ define-command -hidden snippets-add-snippet-impl -params 2..3 %{ evaluate-comman
             filename="$dir/$filetype/$trigger - $description"
             [ -z "${filename##*\'*}" ] && filename=$(printf %s "$filename" | sed "s/'/''''/g")
             printf " ' snippets-add-menu-action ''%s'' ' " "$filename"
-
-            shift
         done
     fi
 }}

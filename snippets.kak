@@ -203,7 +203,12 @@ def snippets-info %{
 # SNIPPET-INSERT PART
 
 decl -hidden range-specs snippets_placeholders
-decl -hidden int-list snippets_placeholder_groups
+# list of placeholder_id|has_default for each placeholder
+# e.g.    1|0 2|1 2|1 1|0 3|0
+# placeholders that belong to the same id *should* have the same has_default
+decl -hidden str-list snippets_placeholder_info
+
+decl bool snippets_auto_discard_default true
 
 face global SnippetsNextPlaceholders black,green+F
 face global SnippetsOtherPlaceholders black,yellow+F
@@ -278,7 +283,6 @@ my @sel_content = Text::ParseWords::shellwords($ENV{"kak_selections"});
 my %placeholder_id_to_default;
 my @placeholder_ids;
 
-print("set window snippets_placeholder_groups");
 for my $i (0 .. $#sel_content) {
     my $sel = $sel_content[$i];
     $sel =~ s/\A\$\{?|\}\Z//g;
@@ -287,23 +291,31 @@ for my $i (0 .. $#sel_content) {
         $placeholder_id = "9999";
     }
     $placeholder_ids[$i] = $placeholder_id;
-    print(" $placeholder_id");
     if (defined($placeholder_default)) {
         $placeholder_id_to_default{$placeholder_id} = $placeholder_default;
+    }
+}
+
+print("set window snippets_placeholder_info");
+for my $placeholder_id (@placeholder_ids) {
+    print(" $placeholder_id");
+    if (exists $placeholder_id_to_default{$placeholder_id}) {
+        print("|1");
+    } else {
+        print("|0");
     }
 }
 print("\n");
 
 print("reg dquote");
-foreach my $i (0 .. $#sel_content) {
-    my $placeholder_id = $placeholder_ids[$i];
+for my $placeholder_id (@placeholder_ids) {
     if (exists $placeholder_id_to_default{$placeholder_id}) {
-        my $def = $placeholder_id_to_default{$placeholder_id};
+        my $default = $placeholder_id_to_default{$placeholder_id};
         # de-double up closing braces
-        $def =~ s/\}\}/}/g;
+        $default =~ s/\}\}/}/g;
         # double up single-quotes
-        $def =~ s/'\''/'\'''\''/g;
-        print(" '\''$def'\''");
+        $default =~ s/'\''/'\'''\''/g;
+        print(" '\''$default'\''");
     } else {
         print(" '\'''\''");
     }
@@ -317,17 +329,26 @@ print("\n");
     eval -itersel %{ set -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
 >
 
+def -hidden snippets-setup-auto-discard %{
+    hook window -group auto-discard InsertChar .* %{ exec "<a-;>d%val{hook_param}"; remove-hooks window auto-discard }
+    hook window -group auto-discard InsertEnd .* %{ remove-hooks window auto-discard }
+    hook window -group auto-discard InsertMove .* %{ remove-hooks window auto-discard }
+}
+
 def snippets-select-next-placeholders %{
     update-option window snippets_placeholders
     eval %sh{
-        eval set -- "$kak_opt_snippets_placeholder_groups"
+        eval set -- "$kak_opt_snippets_placeholder_info"
         if [ $# -eq 0 ]; then printf "fail 'There are no next placeholders'"; exit; fi
         next_id=9999
         second_next_id=9999
-        for placeholder_id do
+        next_has_default=''
+        for placeholder_info do
+            placeholder_id="${placeholder_info%|*}"
             if [ "$placeholder_id" -lt "$next_id" ]; then
                 second_next_id="$next_id"
                 next_id="$placeholder_id"
+                next_has_default="${placeholder_info#*|}"
             elif [ "$placeholder_id" -lt "$second_next_id" ] && [ "$placeholder_id" -ne "$next_id" ]; then
                 second_next_id="$placeholder_id"
             fi
@@ -335,12 +356,14 @@ def snippets-select-next-placeholders %{
         next_descs_id=''
         second_next_descs_id='' # for highlighting purposes
         desc_id=0
-        printf 'set window snippets_placeholder_groups'
-        for placeholder_id do
+        # consume the current placeholder group
+        printf 'set window snippets_placeholder_info'
+        for placeholder_info do
+            placeholder_id="${placeholder_info%|*}"
             if [ "$placeholder_id" -eq "$next_id" ]; then
                 next_descs_id="${next_descs_id} $desc_id"
             else
-                printf ' %s' "$placeholder_id"
+                printf ' %s' "$placeholder_info"
             fi
             if [ "$placeholder_id" -eq "$second_next_id" ]; then
                 second_next_descs_id="${second_next_descs_id} $desc_id"
@@ -368,10 +391,12 @@ def snippets-select-next-placeholders %{
                 for candidate_desc_id in $second_next_descs_id; do
                     if [ "$candidate_desc_id" -eq "$desc_id" ]; then
                         found=1
+                        # change the face of the placeholder since it's next in line
                         printf ' %s' "${desc%%|*}|SnippetsNextPlaceholders"
                         break
                     fi
                 done
+                # keep the placeholder as-is
                 if [ $found -eq 0 ]; then
                     printf ' %s' "$desc"
                 fi
@@ -381,5 +406,8 @@ def snippets-select-next-placeholders %{
         printf '\n'
 
         printf "select %s\n" "$selections"
+        if [ "$next_has_default" -eq 1 ] && [ "$kak_opt_snippets_auto_discard_default" = "true" ]; then
+            printf "snippets-setup-auto-discard\n"
+        fi
     }
 }

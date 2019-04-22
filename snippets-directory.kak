@@ -133,8 +133,6 @@ define-command -hidden snippets-add-snippet-impl -params 2..3 %{ evaluate-comman
             filename="$dir/$filetype/$trigger - $description"
             [ -z "${filename##*\'*}" ] && filename=$(printf %s "$filename" | sed "s/'/''''/g")
             printf " ' snippets-add-menu-action ''%s'' ' " "$filename"
-
-            shift
         done
     fi
 }}

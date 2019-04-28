@@ -340,8 +340,8 @@ def snippets-select-next-placeholders %{
     eval %sh{
         eval set -- "$kak_opt_snippets_placeholder_info"
         if [ $# -eq 0 ]; then printf "fail 'There are no next placeholders'"; exit; fi
-        next_id=9999
-        second_next_id=9999
+        next_id=10000
+        second_next_id=10000
         next_has_default=''
         for placeholder_info do
             placeholder_id="${placeholder_info%|*}"

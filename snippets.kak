@@ -330,9 +330,10 @@ print("\n");
 >
 
 def -hidden snippets-setup-auto-discard %{
-    hook window -group auto-discard InsertChar .* %{ exec "<a-;>d%val{hook_param}"; remove-hooks window auto-discard }
-    hook window -group auto-discard InsertEnd .* %{ remove-hooks window auto-discard }
-    hook window -group auto-discard InsertMove .* %{ remove-hooks window auto-discard }
+    remove-hooks window snippets-auto-discard
+    hook window -group snippets-auto-discard InsertChar .* %{ remove-hooks window snippets-auto-discard; exec "<a-;>d%val{hook_param}" }
+    hook window -group snippets-auto-discard InsertEnd .* %{ remove-hooks window snippets-auto-discard }
+    hook window -group snippets-auto-discard InsertMove .* %{ remove-hooks window snippets-auto-discard }
 }
 
 def snippets-select-next-placeholders %{

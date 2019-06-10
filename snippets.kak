@@ -1,6 +1,7 @@
 # GENERIC SNIPPET PART
 
 decl -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
+declare-option -hidden str snippets_source %val{source}
 
 hook global WinSetOption 'snippets=$' %{
     set window snippets_triggers_regex "\A\z"
@@ -271,63 +272,16 @@ def snippets-insert -hidden -params 1 %<
     try snippets-select-next-placeholders
 >
 
-def -hidden snippets-insert-perl-impl %<
-    eval %sh< # $kak_selections
-        perl -e '
-use strict;
-use warnings;
-use Text::ParseWords();
-
-my @sel_content = Text::ParseWords::shellwords($ENV{"kak_selections"});
-
-my %placeholder_id_to_default;
-my @placeholder_ids;
-
-for my $i (0 .. $#sel_content) {
-    my $sel = $sel_content[$i];
-    $sel =~ s/\A\$\{?|\}\Z//g;
-    my ($placeholder_id, $placeholder_default) = ($sel =~ /^(\d+)(?::(.*))?$/);
-    if ($placeholder_id eq "0") {
-        $placeholder_id = "9999";
+define-command -hidden snippets-insert-perl-impl %{
+    evaluate-commands %sh{
+        # $kak_selections $kak_client
+        perl ${kak_opt_snippets_source%/*}/snippets.pl
     }
-    $placeholder_ids[$i] = $placeholder_id;
-    if (defined($placeholder_default)) {
-        $placeholder_id_to_default{$placeholder_id} = $placeholder_default;
-    }
-}
-
-print("set window snippets_placeholder_info");
-for my $placeholder_id (@placeholder_ids) {
-    print(" $placeholder_id");
-    if (exists $placeholder_id_to_default{$placeholder_id}) {
-        print("|1");
-    } else {
-        print("|0");
-    }
-}
-print("\n");
-
-print("reg dquote");
-for my $placeholder_id (@placeholder_ids) {
-    if (exists $placeholder_id_to_default{$placeholder_id}) {
-        my $default = $placeholder_id_to_default{$placeholder_id};
-        # de-double up closing braces
-        $default =~ s/\}\}/}/g;
-        # double up single-quotes
-        $default =~ s/'\''/'\'''\''/g;
-        print(" '\''$default'\''");
-    } else {
-        print(" '\'''\''");
-    }
-}
-print("\n");
-'
-    >
-    exec R
-    set window snippets_placeholders %val{timestamp}
+    execute-keys R
+    set-option window snippets_placeholders %val{timestamp}
     # no need to set the NextPlaceholders face yet, select-next-placeholders will take care of that
-    eval -itersel %{ set -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
->
+    evaluate-commands -itersel %{ set-option -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
+}
 
 def -hidden snippets-setup-auto-discard %{
     remove-hooks window snippets-auto-discard

@@ -89,7 +89,6 @@ define-command snippets-directory-reload %{
     # TODO unset and re-set the 'filetype' of each open buffer so that it has the latest snippets
 }
 
-
 define-command -docstring "snippets-add-snippet <trigger> <description> [<filetype>]: Create new snippet for given filetype.
 If filetype is ommited, the current active filetype is used.
 If 'filetype' is not currently defined, the snippet is added in global scope.

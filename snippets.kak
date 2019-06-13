@@ -274,7 +274,7 @@ def snippets-insert -hidden -params 1 %<
 
 define-command -hidden snippets-insert-perl-impl %{
     evaluate-commands %sh{
-        # $kak_selections $kak_client
+        # $kak_selections
         perl ${kak_opt_snippets_source%/*}/snippets.pl
     }
     execute-keys R

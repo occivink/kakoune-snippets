@@ -2,7 +2,6 @@ use strict;
 use warnings;
 use Text::ParseWords();
 
-my $client = $ENV{"kak_client"};
 my @sel_content = Text::ParseWords::shellwords($ENV{"kak_selections"});
 
 my %placeholder_id_to_default;
@@ -21,7 +20,7 @@ for my $i (0 .. $#sel_content) {
     }
 }
 
-print("evaluate-commands -client $client %{ set-option window snippets_placeholder_info");
+print("set-option window snippets_placeholder_info");
 for my $placeholder_id (@placeholder_ids) {
     print(" $placeholder_id");
     if (exists $placeholder_id_to_default{$placeholder_id}) {
@@ -30,9 +29,9 @@ for my $placeholder_id (@placeholder_ids) {
         print("|0");
     }
 }
-print("}\n");
+print("\n");
 
-print("evaluate-commands -client $client %{ set-register dquote");
+print("set-register dquote");
 for my $placeholder_id (@placeholder_ids) {
     if (exists $placeholder_id_to_default{$placeholder_id}) {
         my $default = $placeholder_id_to_default{$placeholder_id};
@@ -45,4 +44,4 @@ for my $placeholder_id (@placeholder_ids) {
         print(" ''");
     }
 }
-print("}\n");
+print("\n");

@@ -8,7 +8,7 @@ hook global WinSetOption 'snippets=$' %{
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_triggers_regex %sh{
         eval set -- "$kak_opt_snippets"
-        if [ $(($#%3)) -ne 0 ]; then printf '\A\z'; exit; fi
+        if [ $(($#%3)) -ne 0 ]; then printf '\\\A\\\z'; exit; fi
         res=""
         while [ $# -ne 0 ]; do
             if [ -n "$2" ]; then
@@ -21,7 +21,7 @@ hook global WinSetOption 'snippets=.+$' %{
             shift 3
         done
         if [ -z "$res" ]; then
-            printf "\A\z"
+            printf "\\\A\\\z"
         else
             printf '(%s)' "$res"
         fi
@@ -78,11 +78,11 @@ def snippets-expand-trigger -params ..1 %{
                         printf "' catch '\n"
                     fi
                     # put the trigger into %reg{/} as \Atrig\z
-                    printf "reg / ''\A"
+                    printf "reg / ''\\\A"
                     # we`re at two levels of nested single quotes (one for try ".." catch "..", one for reg "..")
                     # in the arbitrary user input (snippet trigger and snippet name)
                     quadrupleupsinglequotes "$2"
-                    printf "\z''\n"
+                    printf "\\\z''\n"
                     printf "exec -draft <space><a-k><ret>d\n"
                     printf "reg n ''"
                     quadrupleupsinglequotes "$1"
@@ -360,7 +360,7 @@ def snippets-select-next-placeholders %{
             for candidate_desc_id in $next_descs_id; do
                 if [ "$candidate_desc_id" -eq "$desc_id" ]; then
                     found=1
-                    selections="${selections} ${desc%%|*}"
+                    selections="${selections} ${desc%%\|*}"
                     break
                 fi
             done
@@ -368,7 +368,7 @@ def snippets-select-next-placeholders %{
                 for candidate_desc_id in $second_next_descs_id; do
                     if [ "$candidate_desc_id" -eq "$desc_id" ]; then
                         found=1
-                        printf ' %s' "${desc%%|*}|SnippetsNextPlaceholders"
+                        printf ' %s' "${desc%%\|*}|SnippetsNextPlaceholders"
                         break
                     fi
                 done

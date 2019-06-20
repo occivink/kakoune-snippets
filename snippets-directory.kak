@@ -9,36 +9,69 @@ define-command snippets-directory-disable %{
 
 define-command snippets-directory-reload %{
     snippets-directory-disable
-    # it might be more efficient to do everything in a single awk/perl/python subprocess
-    # left as an exercise to the reader
     hook -group snippets-directory global BufSetOption filetype=.* %{ unset-option buffer snippets }
     evaluate-commands %sh{
-        doubleupsinglequotes()
-        {
-            rest="$1"
-            levels="$2" # "levels" grows in powers of 2 as more escaping is needed
-            while :; do
-                beforequote="${rest%%"'"*}"
-                if [ "$rest" = "$beforequote" ]; then
-                    printf %s "$rest"
-                    break
-                fi
-                cur="$levels"
-                printf "%s" "$beforequote"
-                while [ "$cur" -gt 0 ]; do
-                    printf "''"
-                    cur=$((cur-1))
-                done
-                rest="${rest#*"'"}"
-            done
+        snippets_info_to_kak_commands() {
+            awk_script=$(cat <<'EOF'
+                function multiply_single_quotes(text, levels){
+                    substitute = "''"
+                    for(; levels > 1; levels--) { substitute = substitute "''" }
+                    gsub("'", substitute, text)
+                    return text
+                }
+                BEGIN {
+                }
+                $1 ~ /^SNIPMARK_MISSING_DIR$/ {
+                    sub("SNIPMARK_MISSING_DIR ", "")
+                    printf "%s\n", "echo -debug 'Snippets directory ''" $0 "'' does not exist'"
+                    next
+                }
+                $1 ~ /^SNIPMARK_NEW_FILETYPE$/ {
+                    sub("SNIPMARK_NEW_FILETYPE ", "")
+                    printf "hook -group 'snippets-directory' global BufSetOption 'filetype="
+                    printf "%s", multiply_single_quotes($0, 1)
+                    printf "' 'set -add buffer snippets"
+                    next
+                }
+                $1 ~ /^SNIPMARK_NEW_SNIPPET$/ {
+                    sub("SNIPMARK_NEW_SNIPPET ", "")
+                    printf "%s", " ''" multiply_single_quotes($0, 2) "''"
+                    expected_line = "trigger"
+                    next
+                }
+                $1 ~ /^SNIPMARK_END_SNIPPET$/ {
+                    printf "'''' ''"
+                    next
+                }
+                $1 ~ /^SNIPMARK_END_FILETYPE$/ {
+                    print "'"
+                    next
+                }
+                {
+                    if(expected_line == "trigger") {
+                        printf "%s", " ''" multiply_single_quotes($0, 2) "''"
+                        printf " ''snippets-insert ''''"
+                        expected_line = "snippets_first_line"
+                    } else if (expected_line == "snippets_first_line") {
+                        printf "%s", multiply_single_quotes($0, 4)
+                        expected_line = "snippets_line"
+                    } else {
+                        printf "\n%s", multiply_single_quotes($0, 4)
+                    }
+                }
+EOF
+            )
+            awk "${awk_script}"
         }
-        IFS='
+
+        NL='
 '
+        IFS="${NL}"
         eval set -- $kak_opt_snippets_directories
-        for dir; do
-        ( # subshell to automatically go back to the starting dir
+        ( for dir; do
+            snippets_info=''
             if [ ! -d "$dir" ]; then
-                printf "echo -debug 'Snippets directory ''%s'' does not exist'\n" "$dir"
+                printf '%s\n' "SNIPMARK_MISSING_DIR ${dir}"
                 exit
             fi
             cd "$dir"
@@ -57,34 +90,21 @@ define-command snippets-directory-reload %{
                     fi
 
                     if [ "$first" -eq 0 ]; then
-                        printf "hook -group 'snippets-directory' global BufSetOption 'filetype="
-                        doubleupsinglequotes "$filetype" 1
-                        printf "' 'set -add buffer snippets"
+                        snippets_info="${snippets_info}SNIPMARK_NEW_FILETYPE ${filetype}${NL}"
                         first=1
                     fi
 
-                    printf " ''"
-                    doubleupsinglequotes "$name" 2
-                    printf "'' ''"
-                    doubleupsinglequotes "$trigger" 2
-                    printf "'' ''snippets-insert ''''"
-                    # we're hitting escaping levels that shouldn't even be possible
-                    firstline=0
+                    snippets_info="${snippets_info}SNIPMARK_NEW_SNIPPET ${name}${NL}${trigger}${NL}"
                     while read -r line; do
-                        if [ "$firstline" -eq 0 ]; then
-                            firstline=1
-                        else
-                            printf "\n"
-                        fi
-                        doubleupsinglequotes "$line" 4
-                    done < "$snippet"
-                    printf "'''' ''"
+                        snippets_info="${snippets_info}${line}${NL}"
+                    done < "${snippet}"
+                    snippets_info="${snippets_info}SNIPMARK_END_SNIPPET${NL}"
                 done
-                [ $first -eq 1 ] && printf "'\n"
+                [ $first -eq 1 ] && snippets_info="${snippets_info}SNIPMARK_END_FILETYPE${NL}"
                 cd ..
             done
-        )
-        done
+            printf '%s' "${snippets_info}"
+        done ) | snippets_info_to_kak_commands
     }
     # TODO unset and re-set the 'filetype' of each open buffer so that it has the latest snippets
 }

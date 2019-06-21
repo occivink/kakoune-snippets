@@ -19,8 +19,6 @@ define-command snippets-directory-reload %{
                     gsub("'", substitute, text)
                     return text
                 }
-                BEGIN {
-                }
                 $1 ~ /^SNIPMARK_MISSING_DIR$/ {
                     sub("SNIPMARK_MISSING_DIR ", "")
                     printf "%s\n", "echo -debug 'Snippets directory ''" $0 "'' does not exist'"

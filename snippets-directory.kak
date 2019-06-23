@@ -48,8 +48,8 @@ sub print_kak_commands_for_filetype_dir {
 
         next if (! -f $snippet);
         $name =~ s/.*? - //;
-        next if ($name eq "");
-        if("$filetype/$name" eq $snippet) {
+        next if ($name eq "");               # no valid snippet name
+        if("$filetype/$name" eq $snippet) {  # no ' - ' in filename -> no trigger
             $trigger = "";
         } else {
             $trigger =~ s/ - .*//;
@@ -97,7 +97,7 @@ sub print_filetype_outro {
 
 sub multiply_single_quotes {
     my $text = shift;
-    my $levels = shift;
+    my $levels = shift;  # "levels" grows in powers of 2 as more escaping is needed
     my $substitute = "''";
     for(; $levels > 1; $levels--) { $substitute .= "''"; }
     $text =~ s/'/$substitute/g;

@@ -11,98 +11,99 @@ define-command snippets-directory-reload %{
     snippets-directory-disable
     hook -group snippets-directory global BufSetOption filetype=.* %{ unset-option buffer snippets }
     evaluate-commands %sh{
-        snippets_info_to_kak_commands() {
-            awk_script=$(cat <<'EOF'
-                function multiply_single_quotes(text, levels){
-                    substitute = "''"
-                    for(; levels > 1; levels--) { substitute = substitute "''" }
-                    gsub("'", substitute, text)
-                    return text
-                }
-                $1 ~ /^SNIPMARK_MISSING_DIR$/ {
-                    sub("SNIPMARK_MISSING_DIR ", "")
-                    printf "%s\n", "echo -debug 'Snippets directory ''" $0 "'' does not exist'"
-                    next
-                }
-                $1 ~ /^SNIPMARK_NEW_FILETYPE$/ {
-                    sub("SNIPMARK_NEW_FILETYPE ", "")
-                    printf "hook -group 'snippets-directory' global BufSetOption 'filetype="
-                    printf "%s", multiply_single_quotes($0, 1)
-                    printf "' 'set -add buffer snippets"
-                    next
-                }
-                $1 ~ /^SNIPMARK_NEW_SNIPPET$/ {
-                    sub("SNIPMARK_NEW_SNIPPET ", "")
-                    printf "%s", " ''" multiply_single_quotes($0, 2) "''"
-                    expected_line = "trigger"
-                    next
-                }
-                $1 ~ /^SNIPMARK_END_SNIPPET$/ {
-                    printf "'''' ''"
-                    next
-                }
-                $1 ~ /^SNIPMARK_END_FILETYPE$/ {
-                    print "'"
-                    next
-                }
-                {
-                    if(expected_line == "trigger") {
-                        printf "%s", " ''" multiply_single_quotes($0, 2) "''"
-                        printf " ''snippets-insert ''''"
-                        expected_line = "snippets_first_line"
-                    } else if (expected_line == "snippets_first_line") {
-                        printf "%s", multiply_single_quotes($0, 4)
-                        expected_line = "snippets_line"
-                    } else {
-                        printf "\n%s", multiply_single_quotes($0, 4)
-                    }
-                }
-EOF
-            )
-            awk "${awk_script}"
+        eval set -- $kak_opt_snippets_directories
+        cat <<'EOF' | perl - "$@"
+use strict;
+use warnings;
+
+foreach my $dir (@ARGV) {
+    if(! -d $dir) {
+        print "echo -debug 'Snippets directory ''$dir'' does not exist'\n";
+        next;
+    }
+
+    opendir(my $dh, $dir) || die "Can't open $dir: $!";
+    my @filetypes = readdir($dh);
+    closedir($dh);
+    foreach my $filetype (@filetypes) {
+        next if ($filetype eq '.' || $filetype eq '..');
+        $filetype = "$dir/$filetype";
+
+        next if (! -d $filetype);
+        print_kak_commands_for_filetype_dir($filetype);
+    }
+}
+
+sub print_kak_commands_for_filetype_dir {
+    my $filetype = shift;
+    my $printed_filetype_intro = 0;
+    opendir(my $dh, $filetype) || die "Can't open $filetype: $!";
+    my @snippets = readdir($dh);
+    closedir($dh);
+    foreach my $snippet (@snippets) {
+        next if ($snippet eq '.' || $snippet eq '..');
+        my $name = $snippet;
+        my $trigger = $snippet;
+        $snippet = "$filetype/$snippet";
+
+        next if (! -f $snippet);
+        $name =~ s/.*? - //;
+        next if ($name eq "");
+        if("$filetype/$name" eq $snippet) {
+            $trigger = "";
+        } else {
+            $trigger =~ s/ - .*//;
         }
 
-        NL='
-'
-        IFS="${NL}"
-        eval set -- $kak_opt_snippets_directories
-        ( for dir; do
-            snippets_info=''
-            if [ ! -d "$dir" ]; then
-                printf '%s\n' "SNIPMARK_MISSING_DIR ${dir}"
-                exit
-            fi
-            cd "$dir"
-            for filetype in *; do
-                [ ! -d $filetype ] && continue
-                first=0
-                cd "$filetype"
-                for snippet in *; do  # this won't include triggers beginning with '.' but those make little sense anyway
-                    [ ! -f "$snippet" ] && continue      # not a regular file
-                    name="${snippet#* - }"
-                    [ "$name" = "" ] && continue         # no valid snippet name
-                    if [ "$name" = "$snippet" ]; then    # no ' - ' in filename -> no trigger
-                        trigger=""
-                    else
-                        trigger="${snippet%% - *}"
-                    fi
+        if($printed_filetype_intro == 0) {
+            print_filetype_intro($filetype);
+            $printed_filetype_intro = 1;
+        }
+        print_snippet($trigger, $name, $snippet);
+    }
+    print_filetype_outro() if ($printed_filetype_intro == 1);
+}
 
-                    if [ "$first" -eq 0 ]; then
-                        snippets_info="${snippets_info}SNIPMARK_NEW_FILETYPE ${filetype}${NL}"
-                        first=1
-                    fi
+sub print_filetype_intro {
+    my $filetype = shift;
+    print "hook -group 'snippets-directory' global BufSetOption 'filetype=";
+    $filetype =~ s/.*\///;  # Poor mans basename() to avoid the extra import
+    print multiply_single_quotes($filetype, 1);
+    print "' 'set -add buffer snippets"
+}
 
-                    snippets_info="${snippets_info}SNIPMARK_NEW_SNIPPET ${name}${NL}${trigger}${NL}"
-                    while read -r line; do
-                        snippets_info="${snippets_info}${line}${NL}"
-                    done < "${snippet}"
-                    snippets_info="${snippets_info}SNIPMARK_END_SNIPPET${NL}"
-                done
-                [ $first -eq 1 ] && snippets_info="${snippets_info}SNIPMARK_END_FILETYPE${NL}"
-                cd ..
-            done
-            printf '%s' "${snippets_info}"
-        done ) | snippets_info_to_kak_commands
+sub print_snippet {
+    my $trigger = shift;
+    my $name = shift;
+    my $snippet = shift;
+    print " ''", multiply_single_quotes($name, 2), "''";
+    print " ''", multiply_single_quotes($trigger, 2), "''";
+    print " ''snippets-insert ''''";
+    my $first_line = 1;
+    open(my $fh, "<", $snippet) || die "Can't open < $snippet: $!";
+    while (<$fh>) {
+        print "\n" if (! $first_line);
+        chomp;
+        print multiply_single_quotes($_, 4);
+        $first_line = 0;
+    }
+    print "'''' ''";
+    close($fh) || warn "close failed: $!";
+}
+
+sub print_filetype_outro {
+    print "'\n";
+}
+
+sub multiply_single_quotes {
+    my $text = shift;
+    my $levels = shift;
+    my $substitute = "''";
+    for(; $levels > 1; $levels--) { $substitute .= "''"; }
+    $text =~ s/'/$substitute/g;
+    return $text;
+}
+EOF
     }
     # TODO unset and re-set the 'filetype' of each open buffer so that it has the latest snippets
 }

@@ -40,7 +40,7 @@ sub print_kak_commands_for_filetype_dir {
     opendir(my $dh, $filetype) || die "Can't open $filetype: $!";
     my @snippets = readdir($dh);
     closedir($dh);
-    foreach my $snippet (@snippets) {
+    foreach my $snippet (sort @snippets) {
         next if ($snippet eq '.' || $snippet eq '..');
         my $name = $snippet;
         my $trigger = $snippet;

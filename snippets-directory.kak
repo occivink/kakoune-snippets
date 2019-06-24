@@ -95,8 +95,7 @@ sub print_filetype_outro {
 sub multiply_single_quotes {
     my $text = shift;
     my $levels = shift;  # "levels" grows in powers of 2 as more escaping is needed
-    my $substitute = "''";
-    for(; $levels > 1; $levels--) { $substitute .= "''"; }
+    my $substitute = "''" x $levels;
     $text =~ s/'/$substitute/g;
     return $text;
 }

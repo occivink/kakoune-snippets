@@ -79,13 +79,10 @@ sub print_snippet {
     print " ''", multiply_single_quotes($name, 2), "''";
     print " ''", multiply_single_quotes($trigger, 2), "''";
     print " ''snippets-insert ''''";
-    my $first_line = 1;
     open(my $fh, "<", $snippet) || die "Can't open < $snippet: $!";
     while (<$fh>) {
-        print "\n" if (! $first_line);
-        chomp;
+        chomp if eof;
         print multiply_single_quotes($_, 4);
-        $first_line = 0;
     }
     print "'''' ''";
     close($fh) || warn "close failed: $!";

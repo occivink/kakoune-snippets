@@ -1,3 +1,7 @@
+hook global KakBegin .* %{ require-module snippets }
+
+provide-module snippets %[
+
 # GENERIC SNIPPET PART
 
 decl -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
@@ -383,3 +387,5 @@ def snippets-select-next-placeholders %{
         printf "select %s\n" "$selections"
     }
 }
+
+]

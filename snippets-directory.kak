@@ -1,4 +1,11 @@
-hook global KakBegin .* snippets-directory-reload
+hook global KakBegin .* %{
+    require-module snippets-directory
+    snippets-directory-reload
+}
+
+provide-module snippets-directory %{
+
+require-module snippets
 
 declare-option str-list snippets_directories "%val{config}/snippets"
 
@@ -158,4 +165,6 @@ define-command -hidden snippets-add-menu-action -params 1 %{
     }
     edit %arg{1}
     hook -group snippets-add-watchers buffer BufWritePost .* snippets-directory-reload
+}
+
 }

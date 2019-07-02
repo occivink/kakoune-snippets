@@ -267,13 +267,13 @@ def snippets-insert -hidden -params 1 %<
 >
 
 def -hidden snippets-insert-perl-impl %<
-    eval %sh< # $kak_selections
+    eval %sh< # $kak_quoted_selections
         perl -e '
 use strict;
 use warnings;
 use Text::ParseWords();
 
-my @sel_content = Text::ParseWords::shellwords($ENV{"kak_selections"});
+my @sel_content = Text::ParseWords::shellwords($ENV{"kak_quoted_selections"});
 
 my %placeholder_id_to_default;
 my @placeholder_ids;

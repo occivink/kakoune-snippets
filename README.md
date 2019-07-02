@@ -10,7 +10,7 @@
 
 Add `snippets.kak` to your autoload dir: `~/.config/kak/autoload/`, or source it manually.
 
-Thie plugin has a dependency on `perl`.
+This plugin requires kakoune version `v2019.07.01` and has a dependency on `perl`.
 
 ## Usage
 

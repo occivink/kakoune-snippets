@@ -11,7 +11,17 @@ define-command snippets-directory-reload %{
     snippets-directory-disable
     hook -group snippets-directory global BufSetOption filetype=.* %{ unset-option buffer snippets }
     evaluate-commands %sh{
-        eval "set -- $kak_quoted_opt_snippets_directories"
+        eval set -- "$kak_quoted_opt_snippets_directories"
+        one_exists=0
+        for dir do
+            if [ -d "$dir" ]; then
+                one_exists=1
+                break
+            fi
+        done
+        if [ "$one_exists" = 0 ]; then
+            exit
+        fi
         cat <<'EOF' | perl - "$@"
 use strict;
 use warnings;

@@ -1,6 +1,4 @@
-# GENERIC SNIPPET PART
-
-decl -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
+declare-option -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
 
 hook global WinSetOption 'snippets=$' %{
     set window snippets_triggers_regex "\A\z"
@@ -28,7 +26,7 @@ hook global WinSetOption 'snippets=.+$' %{
     }
 }
 
-def snippets-expand-trigger -params ..1 %{
+define-command snippets-expand-trigger -params ..1 %{
     eval -save-regs '/snc' %{
         # -draft so that we don't modify anything in case of failure
         eval -draft %{
@@ -39,11 +37,11 @@ def snippets-expand-trigger -params ..1 %{
             #
             # try %{
             #   reg / "\Atrig1\z"
-            #   exec -draft <space><a-k><ret>d
+            #   exec -draft ,<a-k><ret>d
             #   reg c "snipcommand1"
             # } catch %{
             #   reg / "\Atrig2\z"
-            #   exec -draft <space><a-k><ret>d
+            #   exec -draft ,<a-k><ret>d
             #   reg c "snipcommand2"
             # } catch %{
             #   ..
@@ -83,7 +81,7 @@ def snippets-expand-trigger -params ..1 %{
                     # in the arbitrary user input (snippet trigger and snippet name)
                     quadrupleupsinglequotes "$2"
                     printf "\\\z''\n"
-                    printf "exec -draft <space><a-k><ret>d\n"
+                    printf "exec -draft ,<a-k><ret>d\n"
                     printf "reg n ''"
                     quadrupleupsinglequotes "$1"
                     printf "''\n"
@@ -114,19 +112,19 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
                 # we don't have to reset %reg{/} since the internal command does it
                 # but normally we should
                 reg / "%opt{snippets_triggers_regex}\z"
-                # select the 20 previous character and abort if it doesn't end with a trigger
+                # select the 10 previous character and abort if it doesn't end with a trigger
                 # \z makes it so the trigger must be anchored to the cursor to be considered
-                exec ';h20Hs<ret>'
+                exec ';h10Hs<ret>'
             }
         }
     }
 }
 
-decl str-list snippets
+declare-option str-list snippets
 # this one must be declared after the hook, otherwise it might not be enabled right away
-decl bool snippets_auto_expand true
+declare-option bool snippets_auto_expand true
 
-def snippets-impl -hidden -params 1.. %{
+define-command snippets-impl -hidden -params 1.. %{
     eval %sh{
         use=$1
         shift 1
@@ -143,7 +141,7 @@ def snippets-impl -hidden -params 1.. %{
     }
 }
 
-def snippets -params 1 -shell-script-candidates %{
+define-command snippets -params 1 -shell-script-candidates %{
     eval set -- "$kak_quoted_opt_snippets"
     if [ $(($#%3)) -ne 0 ]; then exit; fi
     while [ $# -ne 0 ]; do
@@ -154,7 +152,7 @@ def snippets -params 1 -shell-script-candidates %{
     snippets-impl %arg{1} %opt{snippets}
 }
 
-def snippets-menu-impl -hidden -params .. %{
+define-command snippets-menu-impl -hidden -params .. %{
     eval %sh{
         if [ $(($#%3)) -ne 0 ]; then exit; fi
         printf 'menu'
@@ -168,11 +166,11 @@ def snippets-menu-impl -hidden -params .. %{
     }
 }
 
-def snippets-menu %{
+define-command snippets-menu %{
     snippets-menu-impl %opt{snippets}
 }
 
-def snippets-info %{
+define-command snippets-info %{
     info -title Snippets %sh{
         eval set -- "$kak_quoted_opt_snippets"
         if [ $(($#%3)) -ne 0 ]; then printf "Invalid 'snippets' value"; exit; fi
@@ -200,186 +198,94 @@ def snippets-info %{
     }
 }
 
-# SNIPPET-INSERT PART
+define-command snippets-insert -hidden -params 1 %<
+    eval -save-regs 's' %<
+        eval -draft -save-regs '"' %<
+            # paste the snippet
+            reg dquote %arg{1}
+            exec P
 
-decl -hidden range-specs snippets_placeholders
-decl -hidden int-list snippets_placeholder_groups
+            # replace leading tabs with the appropriate indent
+            try %<
+                reg dquote %sh<
+                    if [ $kak_opt_indentwidth -eq 0 ]; then
+                        printf '\t'
+                    else
+                        printf "%${kak_opt_indentwidth}s"
+                    fi
+                >
+                exec -draft '<a-s>s\A\t+<ret>s.<ret>R'
+            >
 
-face global SnippetsNextPlaceholders black,green+F
-face global SnippetsOtherPlaceholders black,yellow+F
+            # align everything with the current line
+            eval -draft -itersel -save-regs '"' %<
+                try %<
+                    exec -draft -save-regs '/' '<a-s>),xs^\s+<ret>y'
+                    exec -draft '<a-s>)<a-,>P'
+                >
+            >
 
-def snippets-insert -hidden -params 1 %<
-    eval %sh<
-        #<<
-        if ! command -v perl >/dev/null 2>&1; then
-            printf "fail '''perl'' must be installed to use the ''snippets-insert'' command'"
-        fi
-    >
-    eval -draft -save-regs '^"' %<
-        reg '"' %arg{1}
-        exec <a-P>
-        # replace leading tabs with the appropriate indent
-        try %{
-            reg '"' %sh{
-                if [ $kak_opt_indentwidth -eq 0 ]; then
-                    printf '\t'
-                else
-                    printf "%${kak_opt_indentwidth}s"
-                fi
-            }
-            exec -draft '<a-s>s\A\t+<ret>s.<ret>R'
-        }
-        # align everything with the current line
-        eval -draft -itersel -save-regs '"' %{
-            try %{
-                exec -draft -save-regs '/' '<a-s>)<space><a-x>s^\s+<ret>y'
-                exec -draft '<a-s>)<a-space>P'
-            }
-        }
-        try %<
-            # select things that look like placeholders
-            # this regex is not as bad as it looks
-            eval -draft %<
-                exec s((?<lt>!\$)(\$\$)*|\A)\K(\$(\d+|\{(\d+(:(\}\}|[^}])+)?)\}))<ret>
-                # tests
-                # $1                - ok
-                # ${2}              - ok
-                # $1$2$3            - ok x3
-                # $1${2}$3${4}      - ok x4
-                # $1$${2}$$3${4}    - ok, not ok, not ok, ok
-                # $$${3:abc}        - ok
-                # $${3:abc}         - not ok
-                # $$$${3:abc}def    - not ok
-                # ${4:a}}b}def      - ok
-                # ${5:ab}}}def      - ok
-                # ${6:ab}}cd}def    - ok
-                # ${7:ab}}}}cd}def  - ok
-                # ${8:a}}b}}c}}}def - ok
-                snippets-insert-perl-impl
+            reg s %val{selections_desc}
+            # process placeholders
+            try %<
+                # select all placeholders ${..} and  escaped-$ (== $$)
+                exec 's\$\$|\$\{(\}\}|[^}])*\}<ret>'
+                # nonsense test text to check the regex
+                # qwldqwld {qldwlqwld} qlwdl$qwld {qwdlqwld}}qwdlqwldl}
+                # lqlwdl$qwldlqwdl$qwdlqwld {qwd$$lqwld} $qwdlqwld$
+                # ${asd.as.d.} lqwdlqwld $$${as.dqdqw}
+
+                # remove one $ from all $$, and leading $ from ${..}
+                exec -draft '<a-:><a-;>;d'
+                # unselect the $
+                exec '<a-K>\A\$\z<ret>'
+                # we're left with only {..} placeholders, process them...
+                eval reg dquote %sh<
+                    eval set -- "$kak_quoted_selections"
+                    for sel do
+                        # remove trailing }
+                        sel="${sel%\}}"
+                        # and leading {
+                        sel="${sel#{}"
+                        # de-double }}
+                        tmp="$sel"
+                        sel=""
+                        while true; do
+                            case "$tmp" in
+                                *}}*)
+                                    sel="${sel}${tmp%%\}\}*}}"
+                                    tmp=${tmp#*\}\}}
+                                    ;;
+                                *)
+                                    sel="${sel}${tmp}"
+                                    break
+                                    ;;
+                            esac
+                        done
+                        # and quote the result in '..', with escaping (== doubling of ')
+                        tmp="$sel"
+                        sel=""
+                        while true; do
+                            case "$tmp" in
+                                *\'*)
+                                    sel="${sel}${tmp%%\'*}''"
+                                    tmp=${tmp#*\'}
+                                    ;;
+                                *)
+                                    sel="${sel}${tmp}"
+                                    break
+                                    ;;
+                            esac
+                        done
+                        # all done, print it
+                        # nothing like some good old posix-shell text processing
+                        printf "'%s' " "$sel"
+                    done
+                >
+                exec R
+                reg s %val{selections_desc}
             >
         >
-        try %{
-            # de-double up $
-            exec 's\$\$<ret>;d'
-        }
+        try %{ select %reg{s} }
     >
-    try snippets-select-next-placeholders
 >
-
-def -hidden snippets-insert-perl-impl %<
-    eval %sh< # $kak_quoted_selections
-        perl -e '
-use strict;
-use warnings;
-use Text::ParseWords();
-
-my @sel_content = Text::ParseWords::shellwords($ENV{"kak_quoted_selections"});
-
-my %placeholder_id_to_default;
-my @placeholder_ids;
-
-print("set window snippets_placeholder_groups");
-for my $i (0 .. $#sel_content) {
-    my $sel = $sel_content[$i];
-    $sel =~ s/\A\$\{?|\}\Z//g;
-    my ($placeholder_id, $placeholder_default) = ($sel =~ /^(\d+)(?::(.*))?$/);
-    if ($placeholder_id eq "0") {
-        $placeholder_id = "9999";
-    }
-    $placeholder_ids[$i] = $placeholder_id;
-    print(" $placeholder_id");
-    if (defined($placeholder_default)) {
-        $placeholder_id_to_default{$placeholder_id} = $placeholder_default;
-    }
-}
-print("\n");
-
-print("reg dquote");
-foreach my $i (0 .. $#sel_content) {
-    my $placeholder_id = $placeholder_ids[$i];
-    if (exists $placeholder_id_to_default{$placeholder_id}) {
-        my $def = $placeholder_id_to_default{$placeholder_id};
-        # de-double up closing braces
-        $def =~ s/\}\}/}/g;
-        # double up single-quotes
-        $def =~ s/'\''/'\'''\''/g;
-        print(" '\''$def'\''");
-    } else {
-        print(" '\'''\''");
-    }
-}
-print("\n");
-'
-    >
-    exec R
-    set window snippets_placeholders %val{timestamp}
-    # no need to set the NextPlaceholders face yet, select-next-placeholders will take care of that
-    eval -itersel %{ set -add window snippets_placeholders "%val{selections_desc}|SnippetsOtherPlaceholders" }
->
-
-def snippets-select-next-placeholders %{
-    update-option window snippets_placeholders
-    eval %sh{
-        eval set -- "$kak_quoted_opt_snippets_placeholder_groups"
-        if [ $# -eq 0 ]; then printf "fail 'There are no next placeholders'"; exit; fi
-        next_id=9999
-        second_next_id=9999
-        for placeholder_id do
-            if [ "$placeholder_id" -lt "$next_id" ]; then
-                second_next_id="$next_id"
-                next_id="$placeholder_id"
-            elif [ "$placeholder_id" -lt "$second_next_id" ] && [ "$placeholder_id" -ne "$next_id" ]; then
-                second_next_id="$placeholder_id"
-            fi
-        done
-        next_descs_id=''
-        second_next_descs_id='' # for highlighting purposes
-        desc_id=0
-        printf 'set window snippets_placeholder_groups'
-        for placeholder_id do
-            if [ "$placeholder_id" -eq "$next_id" ]; then
-                next_descs_id="${next_descs_id} $desc_id"
-            else
-                printf ' %s' "$placeholder_id"
-            fi
-            if [ "$placeholder_id" -eq "$second_next_id" ]; then
-                second_next_descs_id="${second_next_descs_id} $desc_id"
-            fi
-            desc_id=$((desc_id+1))
-        done
-        printf '\n'
-
-        eval set -- "$kak_quoted_opt_snippets_placeholders"
-        printf 'set window snippets_placeholders'
-        printf ' %s' "$1"
-        shift
-        selections=''
-        desc_id=0
-        for desc do
-            found=0
-            for candidate_desc_id in $next_descs_id; do
-                if [ "$candidate_desc_id" -eq "$desc_id" ]; then
-                    found=1
-                    selections="${selections} ${desc%%\|*}"
-                    break
-                fi
-            done
-            if [ $found -eq 0 ]; then
-                for candidate_desc_id in $second_next_descs_id; do
-                    if [ "$candidate_desc_id" -eq "$desc_id" ]; then
-                        found=1
-                        printf ' %s' "${desc%%\|*}|SnippetsNextPlaceholders"
-                        break
-                    fi
-                done
-                if [ $found -eq 0 ]; then
-                    printf ' %s' "$desc"
-                fi
-            fi
-            desc_id=$((desc_id+1))
-        done
-        printf '\n'
-
-        printf "select %s\n" "$selections"
-    }
-}

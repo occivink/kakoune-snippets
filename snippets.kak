@@ -39,11 +39,11 @@ def snippets-expand-trigger -params ..1 %{
             #
             # try %{
             #   reg / "\Atrig1\z"
-            #   exec -draft <space><a-k><ret>d
+            #   exec -draft <,><a-k><ret>d
             #   reg c "snipcommand1"
             # } catch %{
             #   reg / "\Atrig2\z"
-            #   exec -draft <space><a-k><ret>d
+            #   exec -draft <,><a-k><ret>d
             #   reg c "snipcommand2"
             # } catch %{
             #   ..
@@ -83,7 +83,7 @@ def snippets-expand-trigger -params ..1 %{
                     # in the arbitrary user input (snippet trigger and snippet name)
                     quadrupleupsinglequotes "$2"
                     printf "\\\z''\n"
-                    printf "exec -draft <space><a-k><ret>d\n"
+                    printf "exec -draft <,><a-k><ret>d\n"
                     printf "reg n ''"
                     quadrupleupsinglequotes "$1"
                     printf "''\n"
@@ -232,7 +232,7 @@ def snippets-insert -hidden -params 1 %<
         # align everything with the current line
         eval -draft -itersel -save-regs '"' %{
             try %{
-                exec -draft -save-regs '/' '<a-s>)<space><a-x>s^\s+<ret>y'
+                exec -draft -save-regs '/' '<a-s>)<,><a-x>s^\s+<ret>y'
                 exec -draft '<a-s>)<a-space>P'
             }
         }

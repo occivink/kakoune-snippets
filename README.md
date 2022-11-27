@@ -87,10 +87,14 @@ You should use a stricter trigger for the snippet. For example, `\bfor` will onl
 
 It's done using kitty's remote control features, a 'manuscript' and a script to bridge the two. I'll upload them at some point.
 
+## Tests
+
+The `test.kak` file contains tests for the plugin. To execute these tests, simply run `kak -n -e 'source test.kak ; exit'`: if the kakoune instance stays open, the tests have somehow failed and the current state can be inspected.
+
 ## Similar extensions
 
-https://github.com/alexherbo2/snippets.kak
-https://github.com/shachaf/kak/blob/master/scripts/snippet.kak
+https://github.com/alexherbo2/snippets.kak  
+https://github.com/shachaf/kak/blob/master/scripts/snippet.kak  
 
 ## License
 

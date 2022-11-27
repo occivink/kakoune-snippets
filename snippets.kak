@@ -1,3 +1,5 @@
+provide-module snippets %§
+
 declare-option -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
 
 hook global WinSetOption 'snippets=$' %{
@@ -289,3 +291,7 @@ define-command snippets-insert -hidden -params 1 %<
         try %{ select %reg{s} }
     >
 >
+
+§
+
+require-module snippets

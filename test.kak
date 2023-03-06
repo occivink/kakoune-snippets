@@ -22,6 +22,11 @@ exec -with-hooks 'itrig1<esc>'
 assert-selections-are "'foo bar'"
 exec '%d'
 
+# multi-selection
+exec -with-hooks '3otrig1<esc>'
+assert-selections-are "'foo bar' 'foo bar' 'foo bar'"
+exec '%d'
+
 # snippet with placeholders
 set -add buffer snippets 'snip2' 'trig2' %{ snippets-insert %{${foo} ${bar} ${baz}} }
 exec -with-hooks 'itrig2<esc>'

@@ -79,11 +79,11 @@ define-command snippets-expand-trigger -params ..1 %{
                     fi
                     # put the trigger into %reg{/} as \Atrig\z
                     printf "reg / ''\\\A"
-                    # we`re at two levels of nested single quotes (one for try ".." catch "..", one for reg "..")
+                    # we're at two levels of nested single quotes (one for try ".." catch "..", one for reg "..")
                     # in the arbitrary user input (snippet trigger and snippet name)
                     quadrupleupsinglequotes "$2"
                     printf "\\\z''\n"
-                    printf "exec -draft <,><a-k><ret>d\n"
+                    printf "exec -draft <a-k><ret>d\n"
                     printf "reg n ''"
                     quadrupleupsinglequotes "$1"
                     printf "''\n"
@@ -116,7 +116,7 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
                 reg / "%opt{snippets_triggers_regex}\z"
                 # select the 10 previous character and abort if it doesn't end with a trigger
                 # \z makes it so the trigger must be anchored to the cursor to be considered
-                exec ';h10Hs<ret>'
+                exec ';hGhs<ret>'
             }
         }
     }

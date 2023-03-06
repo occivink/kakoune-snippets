@@ -8,7 +8,7 @@ hook global WinSetOption 'snippets=$' %{
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_triggers_regex %sh{
         eval set -- "$kak_quoted_opt_snippets"
-        if [ $(($#%3)) -ne 0 ]; then printf '\\\A\\\z'; exit; fi
+        if [ $(($#%3)) -ne 0 ]; then printf '\A\z'; exit; fi
         res=""
         while [ $# -ne 0 ]; do
             if [ -n "$2" ]; then
@@ -21,7 +21,7 @@ hook global WinSetOption 'snippets=.+$' %{
             shift 3
         done
         if [ -z "$res" ]; then
-            printf "\\\A\\\z"
+            printf '\A\z'
         else
             printf '(%s)' "$res"
         fi

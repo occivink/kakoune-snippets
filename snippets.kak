@@ -111,12 +111,9 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     hook -group snippets-auto-expand window InsertChar .* %{
         try %{
             snippets-expand-trigger %{
-                # we don't have to reset %reg{/} since the internal command does it
-                # but normally we should
-                reg / "%opt{snippets_triggers_regex}\z"
-                # select the 10 previous character and abort if it doesn't end with a trigger
-                # \z makes it so the trigger must be anchored to the cursor to be considered
-                exec ';hGhs<ret>'
+                exec '/.<ret>'
+                reg / "%opt{snippets_triggers_regex}?."
+                exec '<a-/><ret><a-k>.{2,}<ret><a-:>H'
             }
         }
     }

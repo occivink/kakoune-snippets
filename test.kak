@@ -27,12 +27,26 @@ exec -with-hooks '3otrig1<esc>'
 assert-selections-are "'foo bar' 'foo bar' 'foo bar'"
 exec '%d'
 
+# adjacent multi-selection
+exec 'i<space><space><esc>xHs<space><ret>'
+assert-selections-are "' ' ' '"
+exec -with-hooks 'itrig1<esc>'
+assert-selections-are "'foo bar' 'foo bar'"
+exec '%H'
+assert-selections-are "'foo bar foo bar '"
+exec '%d'
+
 # snippet with placeholders
 set -add buffer snippets 'snip2' 'trig2' %{ snippets-insert %{${foo} ${bar} ${baz}} }
 exec -with-hooks 'itrig2<esc>'
 assert-selections-are "'foo' 'bar' 'baz'"
 exec '%H'
 assert-selections-are "'foo bar baz'"
+exec '%d'
+
+# placeholders + multi-selection
+exec -with-hooks '3otrig2<esc>'
+assert-selections-are "'foo' 'bar' 'baz' 'foo' 'bar' 'baz' 'foo' 'bar' 'baz'"
 exec '%d'
 
 # snippet with empty placeholders
@@ -43,7 +57,12 @@ exec '%H'
 assert-selections-are "'foo   bar'"
 exec '%d'
 
-# snippet with escaped placeholders placeholders
+# snippet with empty placeholders + multi-selection
+exec -with-hooks '3otrig3<esc>'
+assert-selections-are "' ' ' ' ' ' ' ' ' ' ' '"
+exec '%d'
+
+# snippet with escaped placeholders
 set -add buffer snippets 'snip4' 'trig4' %< snippets-insert %<foo $${} ${{bar}}}> >
 exec -with-hooks 'itrig4<esc>'
 assert-selections-are "'{bar}'"

@@ -23,7 +23,7 @@ hook global WinSetOption 'snippets=.+$' %{
         if [ -z "$res" ]; then
             printf '\A\z'
         else
-            printf '(%s)' "$res"
+            printf '(?:%s)' "$res"
         fi
     }
 }
@@ -39,15 +39,16 @@ define-command snippets-expand-trigger -params ..1 %{
             #
             # try %{
             #   reg / "\Atrig1\z"
-            #   exec -draft <,><a-k><ret>d
+            #   exec -draft <a-k><ret>d
             #   reg c "snipcommand1"
             # } catch %{
             #   reg / "\Atrig2\z"
-            #   exec -draft <,><a-k><ret>d
+            #   exec -draft <a-k><ret>d
             #   reg c "snipcommand2"
             # } catch %{
             #   ..
             # }
+
             eval %sh{
                 quadrupleupsinglequotes()
                 {
@@ -111,9 +112,9 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     hook -group snippets-auto-expand window InsertChar .* %{
         try %{
             snippets-expand-trigger %{
-                exec '/.<ret>'
-                reg / "%opt{snippets_triggers_regex}?."
-                exec '<a-/><ret><a-k>.{2,}<ret><a-:>H'
+                reg / "(%opt{snippets_triggers_regex})|."
+                exec -save-regs '' ';<a-/><ret>'
+                eval -draft -verbatim menu "%reg{1}" ''
             }
         }
     }

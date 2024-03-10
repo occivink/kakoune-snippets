@@ -8,7 +8,7 @@ try %{
 define-command assert-selections-are -params 1 %{
     eval %sh{
         if [ "$1" != "$kak_quoted_selections" ]; then
-            printf 'fail "Check failed"'
+            printf 'bad "Check failed"'
         fi
     }
 }

@@ -5,6 +5,7 @@ declare-option -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<re
 hook global WinSetOption 'snippets=$' %{
     set window snippets_triggers_regex "\A\z"
 }
+
 hook global WinSetOption 'snippets=.+$' %{
     set window snippets_triggers_regex %sh{
         eval set -- "$kak_quoted_opt_snippets"
@@ -111,10 +112,11 @@ hook global WinSetOption 'snippets_auto_expand=true$' %{
     rmhooks window snippets-auto-expand
     hook -group snippets-auto-expand window InsertChar .* %{
         try %{
-            snippets-expand-trigger %{
+            snippets-expand-trigger %{ # no need to save-regs '/', since expand-trigger does that for us
                 reg / "(%opt{snippets_triggers_regex})|."
-                exec -save-regs '' ';<a-/><ret>'
-                eval -draft -verbatim menu "%reg{1}" ''
+                exec ';<a-/><ret>'
+                reg / "\A(%opt{snippets_triggers_regex})\z"
+                exec '<a-k><ret>'
             }
         }
     }

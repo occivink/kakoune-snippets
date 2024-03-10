@@ -16,7 +16,7 @@ This plugin requires the kakoune version `2022.10.31`.
 
 The extension is configured via two options:
 * `snippets` `[str-list]` is a list of {name, trigger, command} tuples. The name is the identifier of the snippet, the trigger is a short string that identifies the snippet, and the command is what gets `eval`'d when the snippet is activated. In practice it's just a flat list that looks like `snip1-name` `snip1-trigger` `snip1-command` `snip2-name` `snip2-trigger` `snip2-command`...  
-* `snippets_auto_expand` `[bool]` controls whether triggers are automatically expanded when they are typed in insert mode. `false` by default.  
+* `snippets_auto_expand` `[bool]` controls whether triggers are automatically expanded when they are typed in insert mode. `true` by default.  
 
 Snippets can be selected manually with the commands `snippets` and `snippets-menu`.
 

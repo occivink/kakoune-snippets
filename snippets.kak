@@ -1,4 +1,5 @@
-provide-module snippets %§
+provide-module snippets ''
+require-module snippets
 
 declare-option -hidden regex snippets_triggers_regex "\A\z" # doing <a-k>\A\z<ret> will always fail
 
@@ -154,24 +155,6 @@ define-command snippets -params 1 -shell-script-candidates %{
     snippets-impl %arg{1} %opt{snippets}
 }
 
-define-command snippets-menu-impl -hidden -params .. %{
-    eval %sh{
-        if [ $(($#%3)) -ne 0 ]; then exit; fi
-        printf 'menu'
-        i=1
-        while [ $# -ne 0 ]; do
-            printf " %%arg{%s}" $i
-            printf " 'snippets %%arg{%s}'" $i
-            i=$((i+3))
-            shift 3
-        done
-    }
-}
-
-define-command snippets-menu %{
-    snippets-menu-impl %opt{snippets}
-}
-
 define-command snippets-info %{
     info -title Snippets %sh{
         eval set -- "$kak_quoted_opt_snippets"
@@ -292,6 +275,28 @@ define-command snippets-insert -hidden -params 1 %<
     >
 >
 
-§
+define-command snippets-menu-impl -hidden -params .. %{
+    eval %sh{
+        if [ $# -eq 0 ]; then
+            printf 'fail "No snippets defined"'
+            exit
+        fi
+        if [ $(($#%3)) -ne 0 ]; then
+            exit
+        fi
+        printf 'menu'
+        i=1
+        while [ $# -ne 0 ]; do
+            printf " %%arg{%s}" $i
+            printf " 'snippets %%arg{%s}'" $i
+            i=$((i+3))
+            shift 3
+        done
+    }
+}
 
-require-module snippets
+define-command snippets-menu %{
+    require-module menu
+    snippets-menu-impl %opt{snippets}
+}
+

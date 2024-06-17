@@ -287,8 +287,8 @@ define-command snippets-menu-impl -hidden -params .. %{
         printf 'menu'
         i=1
         while [ $# -ne 0 ]; do
-            printf " %%arg{%s}" $i
-            printf " 'snippets %%arg{%s}'" $i
+            printf ' %%arg{%s}' $i
+            printf ' "snippets %%arg{%s}"' $i
             i=$((i+3))
             shift 3
         done

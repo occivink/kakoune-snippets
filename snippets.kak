@@ -190,6 +190,13 @@ define-command snippets-insert -hidden -params 1 %<
             reg dquote %arg{1}
             exec P
 
+            # replace $n with newlines
+            eval -draft -verbatim try %<
+                # select $n and $$ (to avoid transforming escaped $)
+                exec 's\$\$|\$n<ret><a-k>\$n<ret>c
+<esc>'
+            >
+
             # replace leading tabs with the appropriate indent
             try %<
                 reg dquote %sh<

@@ -53,7 +53,7 @@ Ideally, your snippet command should work in both Insert and Normal mode, so tha
 
 Tabs should be used for indentation when defining snippets, they will be automatically converted to the appropriate indentation level (depending on `indentwidth`)
 
-The snippet supports custom syntax to define cursor placeholders, which define the resulting selections after expansion. A cursor placeholder is defined with `${}` (empty selection) or `${text}` (default selection text). To use a literal `$` inside a snippet or a literal `}` inside a placeholder, double it up (`$$` and `}}`).
+The snippet supports custom syntax to define cursor placeholders, which define the resulting selections after expansion. A cursor placeholder is defined with `${}` (empty selection) or `${text}` (default selection text). `$n` will be transformed into newlines. To use a literal `$` inside a snippet or a literal `}` inside a placeholder, double it up (`$$` and `}}`).
 
 When a snippet is inserted with `snippets-insert`, all placeholders are selected. If there are none, the entire snippet is selected.
 

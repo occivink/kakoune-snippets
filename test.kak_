@@ -77,4 +77,32 @@ exec '%H'
 assert-selections-are "'foo ${} {bar}'"
 exec '%d'
 
+# snippet alignment after insertion
+set -add buffer snippets 'snip5' 'trig5' %< snippets-insert %<a
+    b
+c> >
+exec -with-hooks 'i    trig5<esc>'
+exec '%H'
+assert-selections-are "'    a
+        b
+    c'"
+exec '%d'
+
+# respect indentwidth for indentation
+set -add buffer snippets 'snip6' 'trig6' %< snippets-insert %<a
+	b> >
+set-option buffer indentwidth 0
+exec -with-hooks 'itrig6<esc>'
+exec '%H'
+assert-selections-are "'a
+	b'" # should contain a tab
+exec '%d'
+set-option buffer indentwidth 8
+exec -with-hooks 'itrig6<esc>'
+exec '%H'
+assert-selections-are "'a
+        b'" # should contain 8 spaces
+exec '%d'
+set-option buffer indentwidth 4
+
 delete-buffer

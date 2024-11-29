@@ -105,4 +105,28 @@ assert-selections-are "'a
 exec '%d'
 set-option buffer indentwidth 4
 
+# check transforming $n into newline
+set -add buffer snippets 'snip7' 'trig7' %< snippets-insert %<foo$n    bar$nbaz> >
+exec -with-hooks 'itrig7<esc>'
+assert-selections-are "'foo
+    bar
+baz'"
+exec '%d'
+
+# end-to-end test with multiple features
+set -add buffer snippets 'snip8' 'trig8' %< snippets-insert %<for (${}; ${}; ${}) {$n	$$${}$n}> >
+exec -with-hooks '2o  trig8<esc>'
+assert-selections-are "';' ';' ')' '
+' ';' ';' ')' '
+'"
+exec '%H'
+assert-selections-are "'
+  for (; ; ) {
+      $
+  }
+  for (; ; ) {
+      $
+  }'"
+exec '%d'
+
 delete-buffer

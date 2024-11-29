@@ -306,4 +306,3 @@ define-command snippets-menu %{
     require-module menu
     snippets-menu-impl %opt{snippets}
 }
-
